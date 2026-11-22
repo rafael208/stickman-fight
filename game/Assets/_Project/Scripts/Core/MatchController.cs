@@ -94,6 +94,11 @@ namespace StickmanFight.Core
             yield return new WaitForSeconds(respawnDelay);
             if (_matchOver) yield break;
             who.Respawn(spawn);
+
+            // После KO следующий бой начинается с полного здоровья у обоих:
+            // победитель не должен сохранять остатки ХП.
+            if (player != null) player.Heal();
+            if (enemy != null) enemy.Heal();
         }
 
         private IEnumerator EndRound(bool enemyLost)

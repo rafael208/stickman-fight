@@ -57,7 +57,7 @@ namespace StickmanFight.Weapons
             if (hitbox != null) hitbox.enabled = false;
 
             transform.SetParent(hand, false);
-            transform.localPosition = Vector3.zero;
+            transform.localPosition = new Vector3(0.22f, 0f, 0f);
             transform.localRotation = Quaternion.identity;
             transform.localScale = _defaultScale;
 

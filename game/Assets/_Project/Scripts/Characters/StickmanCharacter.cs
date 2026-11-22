@@ -467,10 +467,16 @@ namespace StickmanFight.Characters
             MoveX = 0f;
             JumpQueued = false;
 
-            if (Combat != null && Combat.Weapon != null) Combat.RequestDrop();
-
             Rig.ResetPose(worldPos);
             SetState(CharacterState.Standing);
+        }
+
+        /// <summary>Восстановить здоровье до максимума (после KO победителю).</summary>
+        public void Heal()
+        {
+            if (IsDead) return;
+            Hp = config != null ? config.maxHp : 100f;
+            Damaged?.Invoke(0f);
         }
 
         /// <summary>Для тестового стенда: мгновенный «толчок» заданной силы в корпус.</summary>
