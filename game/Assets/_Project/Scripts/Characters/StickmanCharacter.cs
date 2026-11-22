@@ -122,6 +122,17 @@ namespace StickmanFight.Characters
             TickTimers(dt);
             UpdateGrounded(dt);
 
+            // Если персонаж завалился без «официального» нокдауна (толкнул предмет, споткнулся),
+            // сам он не встанет: доворот из лежачего положения упирается в пол.
+            // Поэтому любое падение переводим в штатный цикл «упал → подъём».
+            if (State != CharacterState.Knockdown && State != CharacterState.Dead
+                && Grounded && Mathf.Abs(TorsoAngle) > 75f)
+            {
+                Debug.Log($"[Character] упал без удара (angle={TorsoAngle:0}°), подъём через нокдаун");
+                EnterKnockdown();
+                return;
+            }
+
             switch (State)
             {
                 case CharacterState.Dead:
