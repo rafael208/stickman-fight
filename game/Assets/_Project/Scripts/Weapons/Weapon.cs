@@ -65,6 +65,25 @@ namespace StickmanFight.Weapons
             Debug.Log($"[Weapon] {name} взят {owner?.name}");
         }
 
+        private void LateUpdate()
+        {
+            // Оружие поворачивается вместе с бойцом: при движении влево — зеркалится.
+            if (Owner == null || Owner.Rig == null || Owner.Rig.Torso == null) return;
+            if (!IsHeld) return;
+
+            int face = Owner.Facing;
+            transform.localScale = new Vector3(
+                Mathf.Abs(_defaultScale.x) * face, _defaultScale.y, _defaultScale.z);
+
+            if (face < 0)
+            {
+                float torsoX = Owner.Rig.Torso.position.x;
+                var p = transform.position;
+                p.x = 2f * torsoX - p.x;
+                transform.position = p;
+            }
+        }
+
         public void Drop(Vector2 impulse)
         {
             if (!IsHeld) return;
