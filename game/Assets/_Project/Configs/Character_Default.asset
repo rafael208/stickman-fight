@@ -15,14 +15,22 @@ MonoBehaviour:
   maxHp: 100
   torsoWidth: 0.42
   torsoHeight: 0.85
+  shinLength: 0.36
+  thighLength: 0.42
+  upperArmLength: 0.3
+  forearmLength: 0.3
+  headRadius: 0.16
   legHeight: 0.7
   armLength: 0.62
-  headRadius: 0.16
-  torsoMass: 30
-  headMass: 5
+  torsoMass: 20
+  headMass: 7
+  upperArmMass: 5
+  forearmMass: 3.6
+  thighMass: 9
+  shinMass: 6
   armMass: 4
   legMass: 8
-  moveSpeed: 4.5
+  moveSpeed: 6.5
   acceleration: 30
   airControl: 0.35
   jumpSpeed: 7.85
@@ -30,7 +38,32 @@ MonoBehaviour:
   jumpBuffer: 0.12
   rightingRate: 720
   maxAngularVelocity: 20
-  limbMotorForce: 2500
+  torsoAngleKp: 40
+  torsoPosKp: 0
+  torsoKd: 35
+  torsoMaxTorque: 2500
+  hitMotorScale: 0.25
+  recoverRampTime: 0.35
+  neckKp: 20
+  neckKd: 10
+  neckMax: 80
+  shoulderKp: 30
+  shoulderKd: 15
+  shoulderMax: 150
+  elbowKp: 30
+  elbowKd: 15
+  elbowMax: 120
+  hipKp: 120
+  hipKd: 40
+  hipMax: 800
+  kneeKp: 120
+  kneeKd: 40
+  kneeMax: 800
+  neckLimit: 30
+  shoulderLimit: 120
+  elbowLimit: 140
+  hipLimit: 90
+  kneeLimit: 130
   armLimit: 160
   legLimit: 90
   knockdownImpulse: 12
@@ -42,4 +75,4 @@ MonoBehaviour:
   groundGrace: 0.12
   deathDelay: 1.5
   headDamageMultiplier: 1.5
-  friction: 0.4
+  friction: 0.35

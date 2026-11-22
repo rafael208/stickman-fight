@@ -1,24 +1,25 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using StickmanFight.Characters;
 
 namespace StickmanFight.Art
 {
     /// <summary>
-    /// Рисует стикмена по физическим телам ragdoll: белая обводка + цветной силуэт,
-    /// как в трейлере (ADR-2: только линии, без спрайтов).
-    /// Каждый сегмент — пара LineRenderer (обводка сзади, цвет сверху).
+    /// Рисует 10-сегментного стикмена по физическим телам: белая обводка + цветной силуэт.
+    /// Каждая часть — пара LineRenderer (обводка сзади, цвет сверху). Только визуал.
     /// </summary>
     [DefaultExecutionOrder(100)]
     public class RagdollVisual : MonoBehaviour
     {
-        [SerializeField] private float lineWidth = 0.15f;
+        [SerializeField] private float lineWidth = 0.13f;
         [SerializeField] private Color color = Color.cyan;
         [SerializeField] private Color outlineColor = Color.white;
         [SerializeField] private int sortingOrder = 10;
 
         private RagdollRig _rig;
-        private Segment _torso, _head, _armL, _armR, _legL, _legR;
+        private Segment _torso, _head;
+        private readonly List<Segment> _limbs = new List<Segment>(8);
         private Material _fillMaterial;
         private Material _outlineMaterial;
         private float _headRadius = 0.16f;
@@ -42,11 +43,9 @@ namespace StickmanFight.Art
         public void SetColor(Color tint)
         {
             color = tint;
-            if (_torso == null) return;
-            foreach (var s in All()) s.Fill.startColor = s.Fill.endColor = color;
+            ApplyFill(color);
         }
 
-        /// <summary>Короткая вспышка другим цветом (попадание), потом возврат к базовому.</summary>
         public void Flash(Color tint, float duration = 0.08f)
         {
             StopAllCoroutines();
@@ -55,9 +54,19 @@ namespace StickmanFight.Art
 
         private IEnumerator FlashRoutine(Color tint, float duration)
         {
-            SetColor(tint);
+            Color original = color;
+            ApplyFill(tint);
             yield return new WaitForSeconds(duration);
-            SetColor(color);
+            ApplyFill(original);
+        }
+
+        private void ApplyFill(Color c)
+        {
+            if (_torso == null) return;
+            _torso.Fill.startColor = _torso.Fill.endColor = c;
+            if (_head != null) _head.Fill.startColor = _head.Fill.endColor = c;
+            foreach (var s in _limbs)
+                if (s.Fill != null) s.Fill.startColor = s.Fill.endColor = c;
         }
 
         private void Build()
@@ -68,11 +77,8 @@ namespace StickmanFight.Art
             _outlineMaterial = new Material(Shader.Find("Sprites/Default")) { name = "RagdollOutline" };
 
             _torso = MakeSegment("Torso", 2);
-            _armL = MakeSegment("ArmL", 2);
-            _armR = MakeSegment("ArmR", 2);
-            _legL = MakeSegment("LegL", 2);
-            _legR = MakeSegment("LegR", 2);
             _head = MakeSegment("Head", HeadSegments + 1);
+            for (int i = 0; i < 8; i++) _limbs.Add(MakeSegment($"Limb_{i}", 2));
         }
 
         private Segment MakeSegment(string name, int points)
@@ -113,14 +119,14 @@ namespace StickmanFight.Art
             if (_rig == null || _rig.Torso == null) return;
             if (_torso == null) Build();
 
+            // Корпус.
             var torso = _rig.Torso;
-
-            Vector2 up = torso.transform.up;
-            Vector2 center = torso.position;
             var capsule = torso.GetComponent<CapsuleCollider2D>();
             float halfHeight = capsule != null ? capsule.size.y * 0.5f : 0.4f;
-            SetSegment(_torso, center - up * halfHeight, center + up * halfHeight);
+            SetSegment(_torso, torso.position - (Vector2)torso.transform.up * halfHeight,
+                torso.position + (Vector2)torso.transform.up * halfHeight);
 
+            // Голова.
             if (_rig.Head != null)
             {
                 var circle = _rig.Head.GetComponent<CircleCollider2D>();
@@ -128,22 +134,29 @@ namespace StickmanFight.Art
                 DrawCircle(_head, _rig.Head.position, _headRadius);
             }
 
-            DrawLimb(_armL, _rig.ArmL);
-            DrawLimb(_armR, _rig.ArmR);
-            DrawLimb(_legL, _rig.LegL);
-            DrawLimb(_legR, _rig.LegR);
+            // Восемь конечностей.
+            DrawLimb(0, _rig.UpperArmL);
+            DrawLimb(1, _rig.UpperArmR);
+            DrawLimb(2, _rig.ForearmL);
+            DrawLimb(3, _rig.ForearmR);
+            DrawLimb(4, _rig.ThighL);
+            DrawLimb(5, _rig.ThighR);
+            DrawLimb(6, _rig.ShinL);
+            DrawLimb(7, _rig.ShinR);
         }
 
-        private static void DrawLimb(Segment segment, Rigidbody2D body)
+        private void DrawLimb(int index, Rigidbody2D body)
         {
-            if (body == null || segment == null) return;
+            if (index >= _limbs.Count) return;
+            var s = _limbs[index];
+            if (body == null) { s.Fill.enabled = s.Outline.enabled = false; return; }
+            s.Fill.enabled = s.Outline.enabled = true;
 
             var box = body.GetComponent<BoxCollider2D>();
-            float half = box != null ? box.size.y * 0.5f : 0.25f;
+            float half = box != null ? box.size.y * 0.5f : 0.15f;
             Vector2 dir = body.transform.up;
             Vector2 center = body.position;
-
-            SetSegment(segment, center - dir * half, center + dir * half);
+            SetSegment(s, center - dir * half, center + dir * half);
         }
 
         private static void SetSegment(Segment s, Vector2 from, Vector2 to)
@@ -156,18 +169,13 @@ namespace StickmanFight.Art
 
         private void DrawCircle(Segment s, Vector2 center, float radius)
         {
-            if (s == null) return;
-
             for (int i = 0; i <= HeadSegments; i++)
             {
                 float a = i / (float)HeadSegments * Mathf.PI * 2f;
                 var p = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius;
-
                 s.Fill.SetPosition(i, p);
                 s.Outline.SetPosition(i, p);
             }
         }
-
-        private Segment[] All() => new[] { _torso, _head, _armL, _armR, _legL, _legR };
     }
 }

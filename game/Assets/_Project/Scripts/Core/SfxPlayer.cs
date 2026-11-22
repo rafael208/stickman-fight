@@ -32,6 +32,7 @@ namespace StickmanFight.Core
 
         public static void Play(string name, float volume = 0.7f, float pitch = 1f)
         {
+            if (!Application.isPlaying) return; // headless-стенд редактора — звука нет
             if (_instance == null) Ensure();
             if (_instance == null) return;
             _instance.PlayInternal(name, volume, pitch);
@@ -39,6 +40,15 @@ namespace StickmanFight.Core
 
         private void PlayInternal(string name, float volume, float pitch)
         {
+            // Awake не вызывается в headless-стенде редактора — создаём источник лениво.
+            if (_source == null)
+            {
+                _source = gameObject.AddComponent<AudioSource>();
+                _source.playOnAwake = false;
+                _source.volume = 0.9f;
+                _source.spatialBlend = 0f;
+            }
+
             if (!_clips.TryGetValue(name, out var clip))
             {
                 clip = BuildClip(name);

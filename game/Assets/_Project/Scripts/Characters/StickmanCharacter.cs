@@ -50,6 +50,7 @@ namespace StickmanFight.Characters
         private float _getUpTimer;
         private float _deadTimer;
         private float _groundedGrace;
+        private float _motorScale = 1f;
 
         /// <summary>«На земле» с гистерезисом: без него состояние мигает Airborne/Standing на стыках.</summary>
         public bool Grounded { get; private set; }
@@ -75,7 +76,7 @@ namespace StickmanFight.Characters
             Rig.Build(config, bodyLayer);
 
             Ground = Rig.Torso.gameObject.AddComponent<GroundCheck>();
-            float legTop = config.legHeight;
+            float legTop = config.shinLength + config.thighLength;
             float torsoHalf = config.torsoHeight * 0.5f;
             // Точка проверки — между ступнями, чуть ниже уровня ног.
             Ground.Configure(0.18f, new Vector2(0f, -(legTop + torsoHalf) + 0.08f));
@@ -90,14 +91,14 @@ namespace StickmanFight.Characters
             BuildCombat();
         }
 
-        /// <summary>Кисть для оружия и боевой компонент. Кисть — на правой руке, чтобы оружие шло за взмахом.</summary>
+        /// <summary>Кисть для оружия и боевой компонент. Кисть — на конце предплечья.</summary>
         private void BuildCombat()
         {
-            if (Rig.ArmR == null) return;
+            if (Rig.ForearmR == null) return;
 
             var hand = new GameObject("HandAnchor");
-            hand.transform.SetParent(Rig.ArmR.transform, false);
-            hand.transform.localPosition = new Vector3(0f, config.armLength * 0.5f, 0f);
+            hand.transform.SetParent(Rig.ForearmR.transform, false);
+            hand.transform.localPosition = new Vector3(0f, -config.forearmLength * 0.5f, 0f);
 
             Combat = GetComponent<Combat.CharacterCombat>();
             if (Combat == null) Combat = gameObject.AddComponent<Combat.CharacterCombat>();
@@ -147,16 +148,16 @@ namespace StickmanFight.Characters
                     return;
             }
 
-            ApplyUprightTorque(dt);
+            ApplyBalance(dt);
             ApplyMovement(dt);
             ApplyJump();
 
             if (_getUpTimer > 0f)
             {
-                // Плавный возврат в вертикаль (FR-RAG-05): углы доворачиваются быстро, но не мгновенно.
+                // Короткий переход из лежачего положения в стойку: PD-момент не может
+                // поднять тело, лежащее на полу (оно упирается), поэтому 0.35 с кинематического доворота.
                 _getUpTimer -= dt;
                 Rig.Torso.MoveRotation(Mathf.MoveTowardsAngle(Rig.Torso.rotation, 0f, config.rightingRate * dt));
-                // Гасим вращение на время подъёма, иначе тело «кувыркается» через голову.
                 Rig.Torso.angularVelocity = 0f;
             }
             else if (State != CharacterState.Stunned)
@@ -177,7 +178,7 @@ namespace StickmanFight.Characters
                 UpdateLocomotionState();
         }
 
-        private void ApplyUprightTorque(float dt)
+        private void ApplyBalance(float dt)
         {
             var body = Rig.Torso;
             bool upright = State != CharacterState.Knockdown && State != CharacterState.Dead;
@@ -189,23 +190,31 @@ namespace StickmanFight.Characters
             }
 
             Rig.SetPoseHeld(true);
-            // Сервопривод суставов: без него ноги «складываются» и тело проседает.
+
+            // Плавное восстановление силы моторов после удара.
+            if (State == CharacterState.Stunned)
+                _motorScale = Mathf.Lerp(_motorScale, config.hitMotorScale, 0.4f);
+            else
+                _motorScale = Mathf.MoveTowards(_motorScale, 1f, (1f / Mathf.Max(0.01f, config.recoverRampTime)) * dt);
+            Rig.SetMotorStrengthScale(_motorScale);
+
+            // Сервопривод всех суставов: локти и колени гнутся, но держат целевую позу.
             Rig.HoldPose();
 
-            float errDeg = Mathf.DeltaAngle(body.rotation, 0f);
+            // Баланс корпуса: момент за угол (к вертикали) + демпфер угловой скорости.
+            float angleErr = Mathf.DeltaAngle(body.rotation, 0f);   // °
+            float torque = -angleErr * config.torsoAngleKp - body.angularVelocity * config.torsoKd;
+            torque = Mathf.Clamp(torque, -config.torsoMaxTorque, config.torsoMaxTorque);
+            body.AddTorque(torque, ForceMode2D.Force);
 
-            // Жёсткое удержание вертикали: корпус доворачивается к 0 со скоростью rightingRate.
-            // Почему не только PD-момент: при наклоне сервопривод ног начинает «шагать»,
-            // и персонаж уезжает вбок. При строго вертикальном корпусе этого не происходит.
-            if (Mathf.Abs(errDeg) > 0.5f)
-                body.MoveRotation(Mathf.MoveTowardsAngle(body.rotation, 0f, config.rightingRate * dt));
+            // Горизонтальная корректирующая сила: тянет корпус обратно над стопами.
+            float dx = body.position.x - Rig.GetFeetCenterX();      // м
+            body.AddForce(new Vector2(-dx * config.torsoPosKp * body.mass, 0f), ForceMode2D.Force);
 
-            body.angularVelocity *= 0.2f;
-
-            // Ограничение угловой скорости вручную: в Unity 6.3 Rigidbody2D.maxAngularVelocity удалён.
-            float maxW = config.maxAngularVelocity;
-            if (Mathf.Abs(body.angularVelocity) > maxW)
-                body.angularVelocity = Mathf.Sign(body.angularVelocity) * maxW;
+            // Ограничение угловой скорости (в Unity 6.3 Rigidbody2D.maxAngularVelocity удалён).
+            float maxDeg = config.maxAngularVelocity * Mathf.Rad2Deg;
+            if (Mathf.Abs(body.angularVelocity) > maxDeg)
+                body.angularVelocity = Mathf.Sign(body.angularVelocity) * maxDeg;
         }
 
         private void UpdateGrounded(float dt)
@@ -224,9 +233,14 @@ namespace StickmanFight.Characters
             float control = grounded ? 1f : config.airControl;
             float target = Mathf.Clamp(MoveX, -1f, 1f) * config.moveSpeed * control;
 
-            var v = Rig.Torso.linearVelocity;
-            v.x = Mathf.MoveTowards(v.x, target, config.acceleration * dt * control);
-            Rig.Torso.linearVelocity = v;
+            // Скорость задаём всем телам: ноги на шарнирах иначе тащатся и тормозят корпус.
+            foreach (var part in Rig.All)
+            {
+                if (part == null) continue;
+                var v = part.linearVelocity;
+                v.x = Mathf.MoveTowards(v.x, target, config.acceleration * dt * control);
+                part.linearVelocity = v;
+            }
 
             if (Mathf.Abs(MoveX) > 0.1f) Facing = MoveX > 0f ? 1 : -1;
 
@@ -320,22 +334,22 @@ namespace StickmanFight.Characters
         {
             SetState(CharacterState.Stunned);
             _stunTimer = config.stunTime;
+            // Ослабляем моторы на время стана: тело заметно реагирует на удар.
+            _motorScale = config.hitMotorScale;
         }
 
         private void StartGettingUp()
         {
             _getUpTimer = 0.35f;
             _invulnerableTimer = config.invulnerableTime;
+            _motorScale = 1f;
+            Rig.SetMotorStrengthScale(1f);
 
-            var body = Rig.Torso;
-            body.linearVelocity = Vector2.zero;
-            body.angularVelocity = 0f;
+            // PD-момент не может поднять тело, лежащее на полу (упирается), а доворот
+            // заваливает его через голову. Надёжнее полный сброс в стойку на месте.
+            float x = Rig.Torso != null ? Rig.Torso.position.x : 0f;
+            Rig.ResetPose(new Vector3(x, transform.position.y, 0f));
 
-            // Лежачее тело нельзя «довернуть» в стойку: вращение упирается в пол и решатель
-            // контактов возвращает его назад. Поэтому сначала приподнимаем корпус над землёй.
-            body.MovePosition(body.position + Vector2.up * config.getUpLiftHeight);
-
-            Rig.SetPoseHeld(true);
             SetState(CharacterState.Standing);
         }
 
