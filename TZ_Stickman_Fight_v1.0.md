@@ -8,7 +8,7 @@
 | Дата | 20.11.2026 |
 | Основание | Черновик `ТЗ.txt` (исходный набросок), дополнен и уточнён |
 | Тип продукта | 2D physics sandbox / fighting game, мобильный прототип |
-| Платформа | Android 7.0+ (API 24+), landscape, оффлайн |
+| Платформа | Android 7.1+ (API 25+), landscape, оффлайн |
 | Движок | Unity 6.3 LTS (6000.3.x), 2D, Built-in Render Pipeline — см. раздел 7 и Приложение Б |
 | Срок | 30 календарных дней (≈ 21 рабочий день) — ориентир, не жёсткий дедлайн: план задаёт порядок этапов |
 | Команда | Мулюков Рафаэль, Уали Рахметолла, Нуртазин Салахуддин |
@@ -428,7 +428,7 @@ flowchart TD
 
 | ID | Требование |
 |---|---|
-| NFR-COMPAT-01 | Минимальная версия Android 7.0 (API 24), target API 35 (или выше — по требованию Google Play на момент релиза) |
+| NFR-COMPAT-01 | Минимальная версия Android 7.1 (**API 25** — ниже Unity 6.3 не даёт), target API 35 (или выше — по требованию Google Play на момент релиза) |
 | NFR-COMPAT-02 | Архитектуры: `arm64-v8a` + `armeabi-v7a`, IL2CPP, .NET Standard 2.1 |
 | NFR-COMPAT-03 | OpenGL ES 3.0+; Metal/Vulkan не обязательны |
 | NFR-COMPAT-04 | Работает на устройствах с 2 ГБ RAM и без гироскопа |
@@ -1168,7 +1168,7 @@ hitstopDuration = clamp(0.04 + damage * 0.001, 0.04, 0.07)  // 40–70 мс
 1. Unity Hub установлен, вход в аккаунт выполнен, лицензия Personal активирована.
 2. Установлена версия **Unity 6.3 LTS (6000.3.x)** с модулями: `Android Build Support`, `Android SDK & NDK Tools`, `OpenJDK`, `Windows Build Support (IL2CPP)`.
 3. Создан проект 2D (Built-in), `Assets/_Project` структура на месте.
-4. `Project Settings → Player`: Company/Product name, package name, `Minimum API 24`, `Target API 35+`, `ARM64 + ARMv7`, `IL2CPP`, `Landscape Left/Right`, `Auto Rotation = off`.
+4. `Project Settings → Player`: Company/Product name, package name, `Minimum API 25`, `Target API 35+`, `ARM64 + ARMv7`, `IL2CPP`, `Landscape Left/Right`, `Auto Rotation = off`.
 5. `Project Settings → Physics 2D`: Fixed Timestep 0.0166667, Velocity Iterations 8, Position Iterations 3, `Queries Hit Triggers = off`.
 6. `BuildScript.ConfigureAndroid()` выставляет `EditorPrefs` (SDK/NDK/JDK) — без ручного тыканья в Preferences.
 7. `Menu → Tools → Rebuild Playground` собирает сцены и конфиги.

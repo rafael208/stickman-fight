@@ -1,4 +1,5 @@
 """Convert TZ markdown to a formatted DOCX (python-docx)."""
+import os
 import re
 from docx import Document
 from docx.shared import Pt, Cm, RGBColor
@@ -7,8 +8,10 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
-SRC = r"C:\Users\rafael\Desktop\stickman fight\TZ_Stickman_Fight_v1.0.md"
-DST = r"C:\Users\rafael\Desktop\stickman fight\TZ_Stickman_Fight_v1.0.docx"
+# Пути считаем от расположения скрипта: _tools/.. = корень репозитория
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SRC = os.path.join(BASE, "TZ_Stickman_Fight_v1.0.md")
+DST = os.path.join(BASE, "TZ_Stickman_Fight_v1.0.docx")
 
 ACCENT = RGBColor(0x1F, 0x3A, 0x5F)
 GREY = RGBColor(0x55, 0x5B, 0x66)
