@@ -93,23 +93,23 @@ namespace StickmanFight.Characters
 
             // Плечи и предплечья.
             UpperArmL = MakeLimb("UpperArmL", new Vector2(-shoulderX, torsoCenterY + shoulderY - uarm * 0.5f),
-                new Vector2(0.12f, uarm), cfg.upperArmMass);
+                new Vector2(cfg.armWidth, uarm), cfg.upperArmMass);
             UpperArmR = MakeLimb("UpperArmR", new Vector2(shoulderX, torsoCenterY + shoulderY - uarm * 0.5f),
-                new Vector2(0.12f, uarm), cfg.upperArmMass);
+                new Vector2(cfg.armWidth, uarm), cfg.upperArmMass);
             ForearmL = MakeLimb("ForearmL", new Vector2(-shoulderX, torsoCenterY + shoulderY - uarm - farm * 0.5f),
-                new Vector2(0.11f, farm), cfg.forearmMass);
+                new Vector2(cfg.forearmWidth, farm), cfg.forearmMass);
             ForearmR = MakeLimb("ForearmR", new Vector2(shoulderX, torsoCenterY + shoulderY - uarm - farm * 0.5f),
-                new Vector2(0.11f, farm), cfg.forearmMass);
+                new Vector2(cfg.forearmWidth, farm), cfg.forearmMass);
 
             // Бёдра и голени.
             ThighL = MakeLimb("ThighL", new Vector2(-legX, shin + thigh * 0.5f),
-                new Vector2(0.13f, thigh), cfg.thighMass);
+                new Vector2(cfg.thighWidth, thigh), cfg.thighMass);
             ThighR = MakeLimb("ThighR", new Vector2(legX, shin + thigh * 0.5f),
-                new Vector2(0.13f, thigh), cfg.thighMass);
+                new Vector2(cfg.thighWidth, thigh), cfg.thighMass);
             ShinL = MakeLimb("ShinL", new Vector2(-legX, shin * 0.5f),
-                new Vector2(0.12f, shin), cfg.shinMass);
+                new Vector2(cfg.shinWidth, shin), cfg.shinMass);
             ShinR = MakeLimb("ShinR", new Vector2(legX, shin * 0.5f),
-                new Vector2(0.12f, shin), cfg.shinMass);
+                new Vector2(cfg.shinWidth, shin), cfg.shinMass);
 
             // Шарниры (child -> parent), с PD-коэффициентами по типу сустава.
             Connect(JointNeck, Head, Torso, new Vector2(0f, -cfg.headRadius), new Vector2(0f, torsoHalf),

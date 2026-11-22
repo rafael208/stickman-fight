@@ -11,9 +11,9 @@ namespace StickmanFight.UI
     public class HealthBarAbove : MonoBehaviour
     {
         public StickmanCharacter character;
-        public float width = 1.15f;
-        public float height = 0.13f;
-        public Vector3 offset = new Vector3(0f, 0.45f, 0f);
+        public float width = 0.58f;
+        public float height = 0.075f;
+        public Vector3 offset = new Vector3(0f, 0.26f, 0f);
         public Color fillColor = new Color(0.35f, 0.85f, 0.28f);
         public Color backColor = new Color(0.89f, 0.23f, 0.23f);
 

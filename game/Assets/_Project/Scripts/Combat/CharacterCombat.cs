@@ -219,10 +219,20 @@ namespace StickmanFight.Combat
                 var target = col.GetComponentInParent<StickmanCharacter>();
                 if (target == null || target == character) continue;
 
+                // Урон зависит от того, куда попали: голова больнее, конечности слабее (как в оригинале).
+                float partMultiplier = 1f;
+                var partRb = col.attachedRigidbody;
+                if (target.Rig != null && partRb != null)
+                {
+                    if (partRb == target.Rig.Head) partMultiplier = character.config.headDamageMultiplier;
+                    else if (partRb != target.Rig.Torso) partMultiplier = 0.85f;
+                }
+
+                float hitDamage = damage * partMultiplier;
                 Vector2 point = col.ClosestPoint(origin);
-                var info = DamageInfo.Melee(damage, new Vector2(face * knockback, knockback * 0.35f), point, gameObject, _sourceId);
+                var info = DamageInfo.Melee(hitDamage, new Vector2(face * knockback, knockback * 0.35f), point, gameObject, _sourceId);
                 bool applied = DamageSystem.Apply(target, info);
-                Debug.Log($"[Hit] {cfg.displayName} -> {target.name} dmg={damage:0.0} applied={applied}");
+                Debug.Log($"[Hit] {cfg.displayName} -> {target.name} dmg={hitDamage:0.0} applied={applied}");
             }
         }
 
@@ -276,6 +286,10 @@ namespace StickmanFight.Combat
 
             var projectile = go.AddComponent<Projectile>();
             projectile.Configure(dir, cfg.damage, cfg.projectileLifetime, cfg.impulse / 10f, gameObject, _sourceId);
+
+            // Отдача: стрелок ощутимо толкается назад (как selfKnockback в оригинале).
+            if (character != null && character.Rig != null && character.Rig.Torso != null)
+                character.Rig.Torso.AddForce(new Vector2(-dir.x * 2.6f, 1.1f), ForceMode2D.Impulse);
 
             // Пуля не должна задевать стрелявшего.
             if (character != null && character.Rig != null)

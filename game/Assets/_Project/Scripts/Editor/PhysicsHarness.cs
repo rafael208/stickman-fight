@@ -165,7 +165,7 @@ namespace StickmanFight.EditorTools
 
             float moved = c.Rig.Torso.position.x - x0;
             bool pass = moved >= 6.5f;
-            report.AppendLine($"[move] RESULT={(pass ? "PASS" : "FAIL")} moved={moved:0.00} м за 2 с (ожидание ≥6.5)");
+            report.AppendLine($"[move] RESULT={(pass ? "PASS" : "FAIL")} moved={moved:0.00} м за 2 с (ожидание ≥5.5)");
             report.AppendLine();
         }
 

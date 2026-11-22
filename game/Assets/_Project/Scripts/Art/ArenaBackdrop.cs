@@ -25,7 +25,7 @@ namespace StickmanFight.Art
         public Color crestColor = new Color(1f, 1f, 1f, 0.95f);
 
         [Header("Облака")]
-        public int cloudCount = 9;
+        public int cloudCount = 16;
 
         private void Awake()
         {
@@ -78,14 +78,14 @@ namespace StickmanFight.Art
                 go.transform.SetParent(layer.transform, false);
 
                 float x = Mathf.Lerp(levelBounds.x - 6f, levelBounds.y + 6f, (i + 0.5f) / cloudCount);
-                float y = 2.5f + (i % 3) * 1.3f + ((i * 37) % 11) * 0.12f;
+                float y = 2.4f + (i % 4) * 1.05f + ((i * 37) % 11) * 0.10f;
                 go.transform.position = new Vector3(x, y, 0f);
 
                 var sr = go.AddComponent<SpriteRenderer>();
-                sr.sprite = SpriteFactory.Cloud(320, 130, cloudColor, 1000 + i * 17);
+                sr.sprite = SpriteFactory.Cloud(150, 62, cloudColor, 1000 + i * 17);
                 sr.sortingOrder = -90;
 
-                float scale = 1.0f + ((i * 13) % 7) * 0.14f;
+                float scale = 0.75f + ((i * 13) % 7) * 0.10f;
                 go.transform.localScale = new Vector3(scale, scale, 1f);
             }
         }

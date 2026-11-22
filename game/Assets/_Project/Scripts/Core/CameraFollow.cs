@@ -15,11 +15,11 @@ namespace StickmanFight.Core
         public Transform target;
 
         [Header("Кадрирование")]
-        public Vector2 offset = new Vector2(0f, 1.2f);
-        public float baseSize = 4.6f;
-        public float sizePerMeter = 0.42f;
-        public float minSize = 4.2f;
-        public float maxSize = 7.5f;
+        public Vector2 offset = new Vector2(0f, 0.55f);
+        public float baseSize = 2.9f;
+        public float sizePerMeter = 0.22f;
+        public float minSize = 2.6f;
+        public float maxSize = 5.2f;
         public float smoothing = 6f;
         [Tooltip("Границы, в которых может находиться центр камеры")]
         public Vector2 min = new Vector2(-9.5f, 2f);

@@ -12,9 +12,9 @@ namespace StickmanFight.UI
     public class StockIndicator : MonoBehaviour
     {
         public StickmanCharacter character;
-        public Vector3 offset = new Vector3(0f, 0.15f, 0f);
-        public float square = 0.26f;
-        public float spacing = 0.36f;
+        public Vector3 offset = new Vector3(0f, 0.30f, 0f);
+        public float square = 0.12f;
+        public float spacing = 0.18f;
         public Color fillColor = Color.white;
 
         private readonly List<SpriteRenderer> _icons = new List<SpriteRenderer>();

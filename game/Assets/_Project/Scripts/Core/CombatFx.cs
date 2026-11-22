@@ -29,8 +29,10 @@ namespace StickmanFight.Core
             SfxPlayer.Play("hit", 0.7f, Random.Range(0.9f, 1.15f));
             if (target != null && target.Visual != null) target.Visual.Flash(Color.white, 0.08f);
             if (cameraFollow != null) cameraFollow.Shake(0.14f, 0.22f);
-            DamageNumbers.Show(target != null && target.Rig != null ? target.Rig.Torso.position : Vector2.zero,
-                Mathf.RoundToInt(info.Amount));
+
+            var pos = target != null && target.Rig != null ? target.Rig.Torso.position : Vector2.zero;
+            StickmanFight.Art.HitBurst.Spawn(pos, Color.white, 8, 4.5f);
+            DamageNumbers.Show(pos, Mathf.RoundToInt(info.Amount));
         }
     }
 }

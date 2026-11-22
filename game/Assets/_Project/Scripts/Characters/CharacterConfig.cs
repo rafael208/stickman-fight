@@ -14,8 +14,8 @@ namespace StickmanFight.Characters
         public float maxHp = 100f;
 
         [Header("Пропорции, м")]
-        public float torsoWidth = 0.42f;
-        public float torsoHeight = 0.85f;
+        public float torsoWidth = 0.32f;
+        public float torsoHeight = 0.88f;
         [Tooltip("Голень (от стопы до колена)")]
         public float shinLength = 0.36f;
         [Tooltip("Бедро (от колена до бедра)")]
@@ -25,6 +25,11 @@ namespace StickmanFight.Characters
         [Tooltip("Предплечье")]
         public float forearmLength = 0.30f;
         public float headRadius = 0.16f;
+        [Tooltip("Толщина конечностей, м")]
+        public float armWidth = 0.10f;
+        public float forearmWidth = 0.095f;
+        public float thighWidth = 0.11f;
+        public float shinWidth = 0.10f;
         public float legHeight = 0.7f;
         public float armLength = 0.62f;
 
@@ -60,7 +65,7 @@ namespace StickmanFight.Characters
         [Tooltip("Усиление баланса: момент за угол корпуса, Н·м/°")]
         public float torsoAngleKp = 40f;
         [Tooltip("Горизонтальная корректирующая сила над стопами, 1/с² (0 = выкл)")]
-        public float torsoPosKp = 0f;
+        public float torsoPosKp = 8f;
         [Tooltip("Демпфирование угловой скорости корпуса, Н·м/(°/с)")]
         public float torsoKd = 35f;
         [Tooltip("Предел момента баланса корпуса, Н·м")]

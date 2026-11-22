@@ -168,17 +168,18 @@ namespace StickmanFight.EditorTools
             camGo.tag = "MainCamera";
             var cam = camGo.AddComponent<Camera>();
             cam.orthographic = true;
-            cam.orthographicSize = 4.2f;
+            cam.orthographicSize = 2.9f;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = Hex(Palette.SkyBottom);
-            camGo.transform.position = new Vector3(0f, 1.6f, -10f);
+            camGo.transform.position = new Vector3(0f, 1.2f, -10f);
             camGo.AddComponent<AudioListener>();
 
             var follow = camGo.AddComponent<CameraFollow>();
-            follow.offset = new Vector2(0f, 1.1f);
-            follow.baseSize = 4.2f;
-            follow.minSize = 3.8f;
-            follow.maxSize = 6.6f;
+            follow.offset = new Vector2(0f, 0.55f);
+            follow.baseSize = 2.9f;
+            follow.sizePerMeter = 0.22f;
+            follow.minSize = 2.6f;
+            follow.maxSize = 5.2f;
             follow.min = new Vector2(-9.5f, 0.9f);
             follow.max = new Vector2(9.5f, 2.0f);
 
@@ -186,7 +187,7 @@ namespace StickmanFight.EditorTools
             var backdropGo = new GameObject("Backdrop");
             var backdrop = backdropGo.AddComponent<ArenaBackdrop>();
             backdrop.cam = cam;
-            backdrop.waterLevel = -2.6f;
+            backdrop.waterLevel = -1.2f;
             backdrop.levelBounds = new Vector2(-14f, 14f);
             backdrop.skyTop = Hex(Palette.SkyTop);
             backdrop.skyBottom = Hex(Palette.SkyBottom);
@@ -206,7 +207,7 @@ namespace StickmanFight.EditorTools
             // --- вода убивает ---
             var hazardGo = new GameObject("WaterHazard");
             var hazard = hazardGo.AddComponent<WaterHazard>();
-            hazard.lethalY = -3.4f;
+            hazard.lethalY = -1.2f;
 
             // --- бойцы ---
             var player = CreateCharacter("Player", new Vector3(-1.1f, 0.35f), GameLayers.PlayerBody, Palette.Player);
@@ -293,7 +294,7 @@ namespace StickmanFight.EditorTools
 
             // Пауза: кнопка слева сверху + панель
             var pauseBtn = MakeTapButton(uiRoot, "BtnPause", "II", new Vector2(96f, 96f),
-                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -40f), Hex("#2F5578"), 44);
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -40f), new Color(1f, 1f, 1f, 0.92f), 40, true, Hex("#1A2233"));
 
             var pausePanel = new GameObject("PausePanel", typeof(RectTransform));
             pausePanel.transform.SetParent(uiRoot, false);
@@ -328,15 +329,15 @@ namespace StickmanFight.EditorTools
             var touchGo = new GameObject("TouchInput");
             var touch = touchGo.AddComponent<TouchInput>();
 
-            var left = MakeHoldButton(uiRoot, "BtnLeft", "◀", new Vector2(150f, 150f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(44f, 44f), Hex("#2F5578"));
-            var right = MakeHoldButton(uiRoot, "BtnRight", "▶", new Vector2(150f, 150f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(214f, 44f), Hex("#2F5578"));
+            var left = MakeHoldButton(uiRoot, "BtnLeft", "◀", new Vector2(170f, 170f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(120f, 120f), new Color(0.10f, 0.16f, 0.30f, 0.38f), true, Hex("#FFFFFF"));
+            var right = MakeHoldButton(uiRoot, "BtnRight", "▶", new Vector2(170f, 170f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(320f, 120f), new Color(0.10f, 0.16f, 0.30f, 0.38f), true, Hex("#FFFFFF"));
             touch.left = left.GetComponent<HoldButton>();
             touch.right = right.GetComponent<HoldButton>();
 
-            var jump = MakeTapButton(uiRoot, "BtnJump", "⤒", new Vector2(150f, 150f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-44f, 260f), Hex("#2F5578"), 56);
+            var jump = MakeTapButton(uiRoot, "BtnJump", "⤒", new Vector2(150f, 150f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-44f, 300f), new Color(0.10f, 0.16f, 0.30f, 0.38f), 56, true, Hex("#FFFFFF"));
             UnityEventTools.AddVoidPersistentListener(jump.onClick, touch.OnJump);
 
-            var attack = MakeTapButton(uiRoot, "BtnAttack", "УДАР", new Vector2(200f, 200f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-44f, 44f), Hex(Palette.Accent), 42);
+            var attack = MakeTapButton(uiRoot, "BtnAttack", "УДАР", new Vector2(190f, 190f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-44f, 44f), new Color(0.95f, 0.60f, 0.10f, 0.55f), 40, true, Hex("#FFFFFF"));
             UnityEventTools.AddVoidPersistentListener(attack.onClick, touch.OnAttack);
 
             var interact = MakeTapButton(uiRoot, "BtnInteract", "ВЗЯТЬ", new Vector2(150f, 150f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-90f, 44f), Hex("#3E6B4A"), 30);
@@ -559,7 +560,7 @@ namespace StickmanFight.EditorTools
         }
 
         private static Button MakeTapButton(Transform parent, string name, string label, Vector2 size,
-            Vector2 anchor, Vector2 pivot, Vector2 position, Color background, int fontSize)
+            Vector2 anchor, Vector2 pivot, Vector2 position, Color background, int fontSize, bool circle = false, Color? labelColor = null)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -573,6 +574,11 @@ namespace StickmanFight.EditorTools
 
             var image = go.AddComponent<Image>();
             image.color = background;
+            if (circle)
+            {
+                var knob = UnityEditor.AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+                if (knob != null) { image.sprite = knob; image.type = Image.Type.Simple; }
+            }
 
             var button = go.AddComponent<Button>();
             button.targetGraphic = image;
@@ -584,12 +590,12 @@ namespace StickmanFight.EditorTools
                 Mathf.Min(1f, background.b * 1.15f), 1f);
             button.colors = colors;
 
-            AddLabel(go.transform, label, fontSize, Hex("#10131A"));
+            AddLabel(go.transform, label, fontSize, labelColor ?? Hex("#10131A"));
             return button;
         }
 
         private static GameObject MakeHoldButton(Transform parent, string name, string label, Vector2 size,
-            Vector2 anchor, Vector2 pivot, Vector2 position, Color background)
+            Vector2 anchor, Vector2 pivot, Vector2 position, Color background, bool circle = false, Color? labelColor = null)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -603,9 +609,14 @@ namespace StickmanFight.EditorTools
 
             var image = go.AddComponent<Image>();
             image.color = background;
+            if (circle)
+            {
+                var knob = UnityEditor.AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+                if (knob != null) { image.sprite = knob; image.type = Image.Type.Simple; }
+            }
 
             go.AddComponent<HoldButton>();
-            AddLabel(go.transform, label, 56, Hex("#ECEFF1"));
+            AddLabel(go.transform, label, 56, labelColor ?? Hex("#ECEFF1"));
             return go;
         }
 

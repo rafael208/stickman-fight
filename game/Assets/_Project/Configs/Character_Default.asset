@@ -13,13 +13,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StickmanFight.Characters.CharacterConfig
   maxHp: 100
-  torsoWidth: 0.42
-  torsoHeight: 0.85
+  torsoWidth: 0.32
+  torsoHeight: 0.88
   shinLength: 0.36
   thighLength: 0.42
   upperArmLength: 0.3
   forearmLength: 0.3
   headRadius: 0.16
+  armWidth: 0.1
+  forearmWidth: 0.095
+  thighWidth: 0.11
+  shinWidth: 0.1
   legHeight: 0.7
   armLength: 0.62
   torsoMass: 20
@@ -39,7 +43,7 @@ MonoBehaviour:
   rightingRate: 720
   maxAngularVelocity: 20
   torsoAngleKp: 40
-  torsoPosKp: 0
+  torsoPosKp: 8
   torsoKd: 35
   torsoMaxTorque: 2500
   hitMotorScale: 0.25
