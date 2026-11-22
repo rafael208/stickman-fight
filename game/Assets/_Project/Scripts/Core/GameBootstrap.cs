@@ -13,7 +13,7 @@ namespace StickmanFight
         {
             // Фиксированный шаг физики (NFR-PERF-08) и «тяжёлая» гравитация для быстрого ощущения.
             Time.fixedDeltaTime = 1f / 60f;
-            Physics2D.gravity = new Vector2(0f, -30f);
+            Physics2D.gravity = new Vector2(0f, -22f);
 
             ApplyCollisionMatrix();
 

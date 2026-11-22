@@ -88,7 +88,7 @@ namespace StickmanFight.EditorTools
             var so = new SerializedObject(asset);
             SetInt(so, "m_VelocityIterations", 8);
             SetInt(so, "m_PositionIterations", 3);
-            SetFloat(so, "m_Gravity.y", -30f);
+            SetFloat(so, "m_Gravity.y", -22f);
             SetFloat(so, "m_Gravity.x", 0f);
             SetBool(so, "m_QueriesHitTriggers", false);
             so.ApplyModifiedPropertiesWithoutUndo();

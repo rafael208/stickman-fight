@@ -25,7 +25,7 @@ MonoBehaviour:
   moveSpeed: 4.5
   acceleration: 30
   airControl: 0.35
-  jumpSpeed: 7.5
+  jumpSpeed: 7.85
   coyoteTime: 0.1
   jumpBuffer: 0.12
   rightingRate: 720

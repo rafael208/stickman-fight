@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/_Project/Scenes/20_Battle_Arena.unity
+    guid: 0fe2e3558d82b534085972e0fde42229
+  - enabled: 1
     path: Assets/_Project/Scenes/10_TestBed.unity
     guid: 2e0dbb23973670542aba84c6931e5369
   - enabled: 1

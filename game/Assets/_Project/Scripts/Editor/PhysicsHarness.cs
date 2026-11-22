@@ -28,6 +28,8 @@ namespace StickmanFight.EditorTools
             StandTest(report, seconds: 10f);
             ImpulseTest(report, 20f);
             ImpulseTest(report, 40f);
+            MoveTest(report);
+            JumpTest(report);
 
             Physics2D.simulationMode = SimulationMode2D.FixedUpdate;
 
@@ -147,6 +149,46 @@ namespace StickmanFight.EditorTools
                               $"встал={gotUpAt > 0f} удержался={stayedStanding} " +
                               $"tFell={(fellAt < 0 ? "-" : fellAt.ToString("0.00", CultureInfo.InvariantCulture))} " +
                               $"tUp={(gotUpAt < 0 ? "-" : gotUpAt.ToString("0.00", CultureInfo.InvariantCulture))}");
+            report.AppendLine();
+        }
+
+        private static void MoveTest(StringBuilder report)
+        {
+            var sim = new Simulation();
+            for (int i = 0; i < 60; i++) sim.Step();
+
+            var c = sim.Character;
+            float x0 = c.Rig.Torso.position.x;
+            c.MoveX = 1f;
+            for (int i = 0; i < 120; i++) sim.Step();
+            c.MoveX = 0f;
+
+            float moved = c.Rig.Torso.position.x - x0;
+            bool pass = moved >= 6.5f;
+            report.AppendLine($"[move] RESULT={(pass ? "PASS" : "FAIL")} moved={moved:0.00} м за 2 с (ожидание ≥6.5)");
+            report.AppendLine();
+        }
+
+        private static void JumpTest(StringBuilder report)
+        {
+            var sim = new Simulation();
+            for (int i = 0; i < 60; i++) sim.Step();
+
+            var c = sim.Character;
+            float y0 = c.Rig.Torso.position.y;
+            c.JumpQueued = true;
+
+            float peak = y0;
+            for (int i = 0; i < 150; i++)
+            {
+                sim.Step();
+                peak = Mathf.Max(peak, c.Rig.Torso.position.y);
+            }
+
+            float height = peak - y0;
+            bool pass = height >= 1.1f && height <= 1.8f;
+            report.AppendLine($"[jump] RESULT={(pass ? "PASS" : "FAIL")} height={height:0.00} м " +
+                              $"(при g=-22 и v=7.85 ожидание ≈1.40) state={c.State} grounded={c.Grounded}");
             report.AppendLine();
         }
 

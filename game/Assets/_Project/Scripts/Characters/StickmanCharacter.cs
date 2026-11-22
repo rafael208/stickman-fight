@@ -23,9 +23,13 @@ namespace StickmanFight.Characters
         public RagdollRig Rig { get; private set; }
         public GroundCheck Ground { get; private set; }
         public RagdollVisual Visual { get; private set; }
+        public Combat.CharacterCombat Combat { get; private set; }
         public CharacterState State { get; private set; } = CharacterState.Standing;
         public float Hp { get; private set; }
         public bool IsDead => State == CharacterState.Dead;
+
+        /// <summary>Направление взгляда: 1 вправо, -1 влево. Влияет на удары и выстрелы.</summary>
+        public int Facing { get; private set; } = 1;
 
         /// <summary>Ввод по X: -1..1. Ставится InputRouter (S2) или ИИ (S4).</summary>
         public float MoveX { get; set; }
@@ -81,6 +85,23 @@ namespace StickmanFight.Characters
 
             Rig.SetPoseHeld(true);
             SetState(CharacterState.Standing);
+
+            BuildCombat();
+        }
+
+        /// <summary>Кисть для оружия и боевой компонент. Кисть — на правой руке, чтобы оружие шло за взмахом.</summary>
+        private void BuildCombat()
+        {
+            if (Rig.ArmR == null) return;
+
+            var hand = new GameObject("HandAnchor");
+            hand.transform.SetParent(Rig.ArmR.transform, false);
+            hand.transform.localPosition = new Vector3(0f, config.armLength * 0.5f, 0f);
+
+            Combat = GetComponent<Combat.CharacterCombat>();
+            if (Combat == null) Combat = gameObject.AddComponent<Combat.CharacterCombat>();
+            Combat.character = this;
+            Combat.handAnchor = hand.transform;
         }
 
         // ------------------------------------------------------------------ цикл
@@ -195,6 +216,8 @@ namespace StickmanFight.Characters
             v.x = Mathf.MoveTowards(v.x, target, config.acceleration * dt * control);
             Rig.Torso.linearVelocity = v;
 
+            if (Mathf.Abs(MoveX) > 0.1f) Facing = MoveX > 0f ? 1 : -1;
+
             if (grounded) _coyoteTimer = config.coyoteTime;
         }
 
@@ -211,9 +234,15 @@ namespace StickmanFight.Characters
             if (_jumpBufferTimer <= 0f) return;
             if (!Grounded && _coyoteTimer <= 0f) return;
 
-            var v = Rig.Torso.linearVelocity;
-            v.y = config.jumpSpeed;
-            Rig.Torso.linearVelocity = v;
+            // Скорость задаётся всем телам скелета: если поднять только корпус, шарниры
+            // ног гасят импульс и персонаж едва подпрыгивает (замер: 0.33 м вместо 1.4).
+            foreach (var part in Rig.All)
+            {
+                if (part == null) continue;
+                var pv = part.linearVelocity;
+                pv.y = config.jumpSpeed;
+                part.linearVelocity = pv;
+            }
 
             _jumpBufferTimer = 0f;
             _coyoteTimer = 0f;
@@ -302,6 +331,14 @@ namespace StickmanFight.Characters
             SetState(CharacterState.Dead);
             _deadTimer = 0f;
             Rig.SetPoseHeld(false);
+
+            // Без толчка труп может остаться стоять «столом» из выпрямленных ног:
+            // шарниры в равновесии не требуют момента. Даём случайный опрокидывающий импульс.
+            var body = Rig.Torso;
+            float dir = UnityEngine.Random.value < 0.5f ? -1f : 1f;
+            body.AddTorque(dir * UnityEngine.Random.Range(70f, 130f), ForceMode2D.Impulse);
+            body.AddForce(new Vector2(dir * UnityEngine.Random.Range(0.5f, 1.5f) * body.mass, 0f), ForceMode2D.Impulse);
+
             Debug.Log($"[Character] умер: {name}");
         }
 

@@ -21,6 +21,14 @@ namespace StickmanFight.Characters
 
         private readonly List<Rigidbody2D> _all = new List<Rigidbody2D>(6);
         private readonly List<HingeJoint2D> _joints = new List<HingeJoint2D>(5);
+        private readonly List<float> _jointTargets = new List<float>(5);
+
+        /// <summary>Индексы суставов для адресного управления (например, взмах рукой).</summary>
+        public const int JointArmL = 0;
+        public const int JointArmR = 1;
+        public const int JointLegL = 2;
+        public const int JointLegR = 3;
+        public const int JointHead = 4;
 
         /// <summary>Создаёт скелет как дочерние объекты этого трансформа (фигура стоит на земле, y=0 — ступни).</summary>
         public void Build(CharacterConfig cfg, int bodyLayer)
@@ -157,13 +165,27 @@ namespace StickmanFight.Characters
         {
             if (!_poseHeld) return;
 
-            foreach (var joint in _joints)
+            for (int i = 0; i < _joints.Count; i++)
             {
-                float err = Mathf.DeltaAngle(joint.jointAngle, 0f);
+                var joint = _joints[i];
+                float target = i < _jointTargets.Count ? _jointTargets[i] : 0f;
+                float err = Mathf.DeltaAngle(joint.jointAngle, target);
                 var motor = joint.motor;
                 motor.motorSpeed = Mathf.Clamp(err * ServoGain, -ServoSpeedLimit, ServoSpeedLimit);
                 joint.motor = motor;
             }
+        }
+
+        /// <summary>Целевой угол сустава в градусах (0 — прямая поза).</summary>
+        public void SetJointTarget(int jointIndex, float degrees)
+        {
+            while (_jointTargets.Count <= jointIndex) _jointTargets.Add(0f);
+            _jointTargets[jointIndex] = degrees;
+        }
+
+        public void ResetJointTargets()
+        {
+            for (int i = 0; i < _jointTargets.Count; i++) _jointTargets[i] = 0f;
         }
 
         private const float ServoGain = 6f;

@@ -242,7 +242,7 @@ flowchart TD
 
 **AC:**
 - Зажать «вправо» на 5 с: персонаж перемещается ≈22 м (±10%) и не опрокидывается.
-- Прыжок с места: высота 1.2–1.6 м, приземление без проваливания.
+- Прыжок с места: высота **1.0–1.5 м** (при g = −22 м/с² и v = 7.85 м/с расчётный апекс 1.40 м), приземление без проваливания.
 - Персонаж стоит 30 с без ввода: угол корпуса к вертикали < 15° в 95% кадров.
 
 ### 5.3. Ragdoll и состояния персонажа (FR-RAG)
@@ -270,7 +270,7 @@ flowchart TD
 |---|---|---|
 | FR-COMBAT-01 | Урон наносится только через `DamageSystem` (единая точка): источники — оружие, снаряд, столкновение, падение | MUST |
 | FR-COMBAT-02 | Кулдаун попадания по цели от одного источника: 0.25 с (защита от мультиудара конечностями) | MUST |
-| FR-COMBAT-03 | Формула урона от оружия: `damage = baseDamage * clamp(relSpeed / refSpeed, 0.5, 1.5)` | MUST |
+| FR-COMBAT-03 | Урон от оружия: у меча постоянный (`damage`), у молота зависит от скорости: `lerp(0.8, 1.3, speedFactor)`. Формулы — раздел 7.7 | MUST |
 | FR-COMBAT-04 | Урон от падения: `damage = max(0, (impulse - fallDamageThreshold) * fallDamageK)`, `fallDamageThreshold` = 15 Н·с, `fallDamageK` = 0.35 | MUST |
 | FR-COMBAT-05 | Нокбэк: импульс в направлении удара, сила = `weapon.impulse`, с затуханием | MUST |
 | FR-COMBAT-06 | Hitstop 40–70 мс на попадании, только для попаданий по персонажу | MUST |
@@ -685,9 +685,16 @@ motor.motorSpeed = Mathf.Clamp(err * 6f, -200f, 200f);
 ### 7.7. Формулы
 
 ```text
-// Урон от оружия (FR-COMBAT-03)
-damage = weapon.baseDamage * clamp(relativeSpeed / weapon.refSpeed, 0.5, 1.5)
-// relativeSpeed — модуль относительной скорости точек контакта, refSpeed = 4.0 м/с
+// Урон от оружия (FR-COMBAT-03) — уточнено в S3
+// Меч бьёт за счёт взмаха: базовый урон постоянный (иначе удар с места давал 9 вместо 18)
+damageSword  = weapon.damage
+knockSword   = weapon.impulse * lerp(1.0, 1.2, speedFactor)
+
+// Молот «разгоняемый»: и урон, и нокбэк растут со скоростью персонажа
+damageHammer = weapon.damage  * lerp(0.8, 1.3, speedFactor)
+knockHammer  = weapon.impulse * lerp(1.0, 1.5, speedFactor)
+
+// speedFactor = clamp01(|vx| / weapon.refSpeed), refSpeed: меч 4.0, молот 3.5 м/с
 
 // Урон от падения (FR-COMBAT-04)
 impactDamage = max(0, (impulse - fallDamageThreshold) * fallDamageK)
@@ -731,7 +738,8 @@ hitstopDuration = clamp(0.04 + damage * 0.001, 0.04, 0.07)  // 40–70 мс
 | Скорость движения | 4.5 м/с | 3–6 |
 | Ускорение | 30 м/с² | 15–50 |
 | Воздушный контроль | 0.35 | 0–1 |
-| Импульс прыжка | 7.5 м/с | 5–9 |
+| Гравитация проекта (Physics2D) | −22 м/с² | −15…−30 |
+| Импульс прыжка | 7.85 м/с | 6–10 |
 | Coyote time | 0.10 с | 0.05–0.2 |
 | Jump buffer | 0.12 с | 0.05–0.2 |
 | Скорость доворота корпуса (rightingRate) | 720 °/с | 360–1080 |

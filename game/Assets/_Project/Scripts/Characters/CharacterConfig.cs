@@ -32,7 +32,8 @@ namespace StickmanFight.Characters
         public float acceleration = 30f;
         [Tooltip("Доля управления в воздухе, 0..1")]
         [Range(0f, 1f)] public float airControl = 0.35f;
-        public float jumpSpeed = 7.5f;
+        [Tooltip("Импульс прыжка, м/с (при g=22 даёт высоту ≈1.4 м)")]
+        public float jumpSpeed = 7.85f;
         [Tooltip("Разрешение прыжка после схода с края, с")]
         public float coyoteTime = 0.1f;
         [Tooltip("Запас прыжка до приземления, с")]

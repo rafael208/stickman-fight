@@ -9,6 +9,9 @@ using UnityEngine.UI;
 using StickmanFight.Art;
 using StickmanFight.Characters;
 using StickmanFight.Core;
+using StickmanFight.Inputs;
+using StickmanFight.UI;
+using StickmanFight.Weapons;
 
 namespace StickmanFight.EditorTools
 {
@@ -31,7 +34,8 @@ namespace StickmanFight.EditorTools
 
             var scenes = new List<string>
             {
-                BuildTestBed(),   // S1: стартовая сцена автопрогона G1; позже заменит меню (S2)
+                BuildArena(),     // S2/S3: основная сцена (управление + бой)
+                BuildTestBed(),   // S1: приёмка стойки и ragdoll
                 BuildBoot()
             };
 
@@ -39,6 +43,293 @@ namespace StickmanFight.EditorTools
             AssetDatabase.SaveAssets();
             Debug.Log($"[Scenes] собрано {scenes.Count}: {string.Join(", ", scenes)}");
             return scenes.ToArray();
+        }
+
+        // ---------------------------------------------------------- Arena (S2/S3)
+
+        /// <summary>
+        /// Арена: земля, стены, игрок, манекен, три оружия, HUD и сенсорное управление.
+        /// Собирается кодом (ADR-3), автопрогон G2/G3 — компонентом ArenaTest.
+        /// </summary>
+        private static string BuildArena()
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            // --- камера ---
+            var camGo = new GameObject("Main Camera");
+            camGo.tag = "MainCamera";
+            var cam = camGo.AddComponent<Camera>();
+            cam.orthographic = true;
+            cam.orthographicSize = 5f;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = Hex(Palette.BackgroundArena);
+            camGo.transform.position = new Vector3(0f, 2.4f, -10f);
+            camGo.AddComponent<AudioListener>();
+
+            var follow = camGo.AddComponent<CameraFollow>();
+            follow.offset = new Vector2(0f, 1.5f);
+            follow.min = new Vector2(-9.5f, 1.8f);
+            follow.max = new Vector2(9.5f, 3.2f);
+
+            // --- уровень: пол 25 м, стены по краям ---
+            CreateStrip("Ground", new Vector2(-12.5f, 0f), new Vector2(12.5f, 0f), 0.14f, Palette.Ground,
+                new Vector2(0f, -0.15f), new Vector2(25f, 0.3f));
+            CreateStrip("WallLeft", new Vector2(-12.2f, 0f), new Vector2(-12.2f, 9f), 0.18f, Palette.Ground,
+                new Vector2(-12.2f, 4.5f), new Vector2(0.4f, 9f));
+            CreateStrip("WallRight", new Vector2(12.2f, 0f), new Vector2(12.2f, 9f), 0.18f, Palette.Ground,
+                new Vector2(12.2f, 4.5f), new Vector2(0.4f, 9f));
+
+            // --- персонажи ---
+            var player = CreateCharacter("Player", new Vector3(-0.7f, 0.05f), GameLayers.PlayerBody, Palette.Player);
+            var enemy = CreateCharacter("Enemy", new Vector3(0.5f, 0.05f), GameLayers.EnemyBody, Palette.Enemy);
+            follow.characterTarget = player;
+
+            // --- оружие на земле ---
+            var sword = CreateWeapon("Weapon_Sword", WeaponKind.Sword, new Vector3(-2.4f, 0.5f));
+            var hammer = CreateWeapon("Weapon_Hammer", WeaponKind.Hammer, new Vector3(-3.4f, 0.5f));
+            var pistol = CreateWeapon("Weapon_Pistol", WeaponKind.Pistol, new Vector3(-4.4f, 0.5f));
+
+            // --- UI ---
+            var canvasGo = new GameObject("UI");
+            var canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 100;
+
+            var scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+            canvasGo.AddComponent<GraphicRaycaster>();
+
+            var safeGo = new GameObject("SafeRoot", typeof(RectTransform));
+            safeGo.transform.SetParent(canvasGo.transform, false);
+            var safeRt = (RectTransform)safeGo.transform;
+            safeRt.anchorMin = Vector2.zero;
+            safeRt.anchorMax = Vector2.one;
+            safeRt.offsetMin = Vector2.zero;
+            safeRt.offsetMax = Vector2.zero;
+            safeGo.AddComponent<SafeAreaFitter>();
+            Transform uiRoot = safeGo.transform;
+
+            var esGo = new GameObject("EventSystem");
+            esGo.AddComponent<EventSystem>();
+            esGo.AddComponent<StandaloneInputModule>();
+
+            // HUD
+            var hudGo = new GameObject("HUD");
+            var hud = hudGo.AddComponent<BattleHUD>();
+            hud.player = player;
+            hud.enemy = enemy;
+            hud.playerFill = MakeBar(uiRoot, "PlayerHp", new Vector2(520f, 26f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(48f, -44f), Hex(Palette.Player));
+            hud.enemyFill = MakeBar(uiRoot, "EnemyHp", new Vector2(520f, 26f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-48f, -44f), Hex(Palette.Enemy));
+
+            hud.weaponText = MakeText(uiRoot, "Weapon", "без оружия", 34, Hex(Palette.Text));
+            Anchor(hud.weaponText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f));
+            hud.weaponText.rectTransform.pivot = new Vector2(0.5f, 1f);
+            hud.weaponText.rectTransform.sizeDelta = new Vector2(600f, 44f);
+            hud.weaponText.rectTransform.anchoredPosition = new Vector2(0f, -44f);
+            hud.weaponText.alignment = TextAnchor.UpperCenter;
+
+            hud.ammoText = MakeText(uiRoot, "Ammo", "", 28, Hex(Palette.Accent));
+            Anchor(hud.ammoText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f));
+            hud.ammoText.rectTransform.pivot = new Vector2(0.5f, 1f);
+            hud.ammoText.rectTransform.sizeDelta = new Vector2(600f, 36f);
+            hud.ammoText.rectTransform.anchoredPosition = new Vector2(0f, -90f);
+            hud.ammoText.alignment = TextAnchor.UpperCenter;
+
+            // Управление
+            var touchGo = new GameObject("TouchInput");
+            var touch = touchGo.AddComponent<TouchInput>();
+
+            var left = MakeHoldButton(uiRoot, "BtnLeft", "◀", new Vector2(150f, 150f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(44f, 44f), Hex("#2F5578"));
+            var right = MakeHoldButton(uiRoot, "BtnRight", "▶", new Vector2(150f, 150f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(214f, 44f), Hex("#2F5578"));
+            touch.left = left.GetComponent<HoldButton>();
+            touch.right = right.GetComponent<HoldButton>();
+
+            var jump = MakeTapButton(uiRoot, "BtnJump", "⤒", new Vector2(150f, 150f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-44f, 260f), Hex("#2F5578"), 56);
+            UnityEventTools.AddVoidPersistentListener(jump.onClick, touch.OnJump);
+
+            var attack = MakeTapButton(uiRoot, "BtnAttack", "УДАР", new Vector2(200f, 200f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-44f, 44f), Hex(Palette.Accent), 42);
+            UnityEventTools.AddVoidPersistentListener(attack.onClick, touch.OnAttack);
+
+            var interact = MakeTapButton(uiRoot, "BtnInteract", "ВЗЯТЬ", new Vector2(150f, 150f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-90f, 44f), Hex("#3E6B4A"), 30);
+            UnityEventTools.AddVoidPersistentListener(interact.onClick, touch.OnInteract);
+
+            var drop = MakeTapButton(uiRoot, "BtnDrop", "БРОС", new Vector2(130f, 120f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(90f, 44f), Hex("#6B3E3E"), 28);
+            UnityEventTools.AddVoidPersistentListener(drop.onClick, touch.OnDrop);
+
+            var reset = MakeTapButton(uiRoot, "BtnReset", "СБРОС", new Vector2(150f, 90f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(48f, -92f), Hex("#444B57"), 26);
+
+            var router = player.gameObject.AddComponent<InputRouter>();
+            router.target = player;
+            router.source = touch;
+
+            // Автопрогон G2/G3
+            var testGo = new GameObject("ArenaTest");
+            var test = testGo.AddComponent<ArenaTest>();
+            test.player = player;
+            test.enemy = enemy;
+            test.sword = sword;
+            test.hammer = hammer;
+            test.pistol = pistol;
+
+            // Слушатель должен указывать на метод компонента, лямбда не сериализуется.
+            UnityEventTools.AddVoidPersistentListener(reset.onClick, test.ResetScene);
+
+            string path = $"{ScenesDir}/20_Battle_Arena.unity";
+            EditorSceneManager.SaveScene(scene, path);
+            return path;
+        }
+
+        private static void CreateStrip(string name, Vector2 from, Vector2 to, float width, string colorHex,
+            Vector2 colliderOffset, Vector2 colliderSize)
+        {
+            var go = new GameObject(name);
+            go.layer = GameLayers.Ground;
+            var strip = go.AddComponent<LineStrip>();
+            strip.from = from;
+            strip.to = to;
+            strip.width = width;
+            strip.colorHex = colorHex;
+
+            var col = go.AddComponent<BoxCollider2D>();
+            col.offset = colliderOffset;
+            col.size = colliderSize;
+        }
+
+        private static StickmanCharacter CreateCharacter(string name, Vector3 position, int layer, string colorHex)
+        {
+            var go = new GameObject(name);
+            go.transform.position = position;
+            var character = go.AddComponent<StickmanCharacter>();
+            character.config = ConfigBuilder.EnsureConfig();
+            character.tint = Hex(colorHex);
+            character.bodyLayer = layer;
+            return character;
+        }
+
+        private static Weapon CreateWeapon(string name, WeaponKind kind, Vector3 position)
+        {
+            var config = ConfigBuilder.EnsureWeapon(kind);
+
+            var go = new GameObject(name) { layer = GameLayers.Weapon };
+            go.transform.position = position;
+
+            var rb = go.AddComponent<Rigidbody2D>();
+            rb.mass = config.mass;
+            rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+
+            var col = go.AddComponent<BoxCollider2D>();
+            col.size = config.visualSize;
+
+            var weapon = go.AddComponent<Weapon>();
+            weapon.config = config;
+            weapon.body = rb;
+            weapon.hitbox = col;
+            return weapon;
+        }
+
+        private static Image MakeBar(Transform parent, string name, Vector2 size, Vector2 anchor, Vector2 pivot,
+            Vector2 position, Color fillColor)
+        {
+            var bgGo = new GameObject(name);
+            bgGo.transform.SetParent(parent, false);
+            var bgRt = bgGo.AddComponent<RectTransform>();
+            bgRt.anchorMin = anchor;
+            bgRt.anchorMax = anchor;
+            bgRt.pivot = pivot;
+            bgRt.sizeDelta = size;
+            bgRt.anchoredPosition = position;
+            var bg = bgGo.AddComponent<Image>();
+            bg.color = new Color(0.12f, 0.15f, 0.19f, 0.95f);
+
+            var fillGo = new GameObject("Fill");
+            fillGo.transform.SetParent(bgGo.transform, false);
+            var fillRt = fillGo.AddComponent<RectTransform>();
+            fillRt.anchorMin = Vector2.zero;
+            fillRt.anchorMax = Vector2.one;
+            fillRt.offsetMin = Vector2.zero;
+            fillRt.offsetMax = Vector2.zero;
+
+            var fill = fillGo.AddComponent<Image>();
+            fill.color = fillColor;
+            fill.type = Image.Type.Filled;
+            fill.fillMethod = Image.FillMethod.Horizontal;
+            fill.fillAmount = 1f;
+            return fill;
+        }
+
+        private static void AddLabel(Transform parent, string label, int fontSize, Color color)
+        {
+            var textGo = new GameObject("Label");
+            textGo.transform.SetParent(parent, false);
+            var text = textGo.AddComponent<Text>();
+            text.font = BuiltinFont();
+            text.text = label;
+            text.fontSize = fontSize;
+            text.fontStyle = FontStyle.Bold;
+            text.color = color;
+            text.alignment = TextAnchor.MiddleCenter;
+            text.raycastTarget = false;
+
+            var rt = text.rectTransform;
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+        }
+
+        private static Button MakeTapButton(Transform parent, string name, string label, Vector2 size,
+            Vector2 anchor, Vector2 pivot, Vector2 position, Color background, int fontSize)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchorMin = anchor;
+            rt.anchorMax = anchor;
+            rt.pivot = pivot;
+            rt.sizeDelta = size;
+            rt.anchoredPosition = position;
+
+            var image = go.AddComponent<Image>();
+            image.color = background;
+
+            var button = go.AddComponent<Button>();
+            button.targetGraphic = image;
+            var colors = button.colors;
+            colors.pressedColor = new Color(background.r * 0.65f, background.g * 0.65f, background.b * 0.65f, 1f);
+            colors.highlightedColor = new Color(
+                Mathf.Min(1f, background.r * 1.15f),
+                Mathf.Min(1f, background.g * 1.15f),
+                Mathf.Min(1f, background.b * 1.15f), 1f);
+            button.colors = colors;
+
+            AddLabel(go.transform, label, fontSize, Hex("#10131A"));
+            return button;
+        }
+
+        private static GameObject MakeHoldButton(Transform parent, string name, string label, Vector2 size,
+            Vector2 anchor, Vector2 pivot, Vector2 position, Color background)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+
+            var rt = go.AddComponent<RectTransform>();
+            rt.anchorMin = anchor;
+            rt.anchorMax = anchor;
+            rt.pivot = pivot;
+            rt.sizeDelta = size;
+            rt.anchoredPosition = position;
+
+            var image = go.AddComponent<Image>();
+            image.color = background;
+
+            go.AddComponent<HoldButton>();
+            AddLabel(go.transform, label, 56, Hex("#ECEFF1"));
+            return go;
         }
 
         // ------------------------------------------------------------ TestBed (S1)
