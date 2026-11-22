@@ -123,11 +123,11 @@ namespace StickmanFight.EditorTools
             subtitle.rectTransform.anchorMax = new Vector2(0.5f, 1f);
             subtitle.rectTransform.pivot = new Vector2(0.5f, 1f);
             subtitle.rectTransform.sizeDelta = new Vector2(1200f, 60f);
-            subtitle.rectTransform.anchoredPosition = new Vector2(0f, -215f);
+            subtitle.rectTransform.anchoredPosition = new Vector2(0f, -250f);
             subtitle.alignment = TextAnchor.MiddleCenter;
 
             var playBtn = MakeTapButton(uiRoot, "BtnPlay", "ИГРАТЬ", new Vector2(520f, 160f),
-                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -40f), Hex("#3E6B4A"), 58);
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -210f), Hex("#3E6B4A"), 54);
 
             var version = MakeText(uiRoot, "Version", BuildInfo.Label, 28, Hex(Palette.Text));
             version.rectTransform.anchorMin = new Vector2(0f, 0f);
@@ -145,7 +145,7 @@ namespace StickmanFight.EditorTools
             {
                 float x = (i - 1) * 260f;
                 var wb = MakeTapButton(uiRoot, "BtnWeapon" + i, weaponNames[i], new Vector2(230f, 96f),
-                    new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 150f), Hex("#2A3550"), 34);
+                    new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 40f), Hex("#2A3550"), 34);
                 weaponButtons[i] = wb;
                 var lbl = wb.GetComponentInChildren<Text>();
                 if (lbl != null) weaponLabels[i] = lbl;
@@ -339,31 +339,26 @@ namespace StickmanFight.EditorTools
             var restartBtn = MakeTapButton(pausePanel.transform, "BtnRestart", "ЗАНОВО", new Vector2(420f, 110f),
                 new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -140f), Hex("#6B3E3E"), 40);
 
+            var pauseMenuBtn = MakeTapButton(pausePanel.transform, "BtnToMenu", "В ГЛАВНОЕ МЕНЮ", new Vector2(420f, 110f),
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -280f), Hex("#2F5578"), 34);
+
             var pause = canvasGo.AddComponent<PauseOverlay>();
             pause.panel = pausePanel;
             pause.pauseButton = pauseBtn;
             UnityEventTools.AddVoidPersistentListener(pauseBtn.onClick, pause.Toggle);
             UnityEventTools.AddVoidPersistentListener(resumeBtn.onClick, pause.OnResumeClicked);
             UnityEventTools.AddVoidPersistentListener(restartBtn.onClick, pause.OnRestartClicked);
+            UnityEventTools.AddVoidPersistentListener(pauseMenuBtn.onClick, pause.OnMenuClicked);
 
             // Управление
             var touchGo = new GameObject("TouchInput");
             var touch = touchGo.AddComponent<TouchInput>();
 
-            var joystick = MakeJoystick(uiRoot, new Vector2(280f, 280f), new Vector2(180f, 180f));
+            var joystick = MakeJoystick(uiRoot, new Vector2(390f, 390f), new Vector2(230f, 215f));
             touch.joystick = joystick.GetComponent<VirtualJoystick>();
 
-            var jump = MakeTapButton(uiRoot, "BtnJump", "⤒", new Vector2(150f, 150f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-44f, 300f), new Color(0.10f, 0.16f, 0.30f, 0.38f), 56, true, Hex("#FFFFFF"));
-            UnityEventTools.AddVoidPersistentListener(jump.onClick, touch.OnJump);
-
-            var attack = MakeTapButton(uiRoot, "BtnAttack", "УДАР", new Vector2(190f, 190f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-44f, 44f), new Color(0.95f, 0.60f, 0.10f, 0.55f), 40, true, Hex("#FFFFFF"));
-            UnityEventTools.AddVoidPersistentListener(attack.onClick, touch.OnAttack);
-
-            var interact = MakeTapButton(uiRoot, "BtnInteract", "ВЗЯТЬ", new Vector2(150f, 150f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(-90f, 44f), Hex("#3E6B4A"), 30);
-            UnityEventTools.AddVoidPersistentListener(interact.onClick, touch.OnInteract);
-
-            var drop = MakeTapButton(uiRoot, "BtnDrop", "БРОС", new Vector2(130f, 120f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(90f, 44f), Hex("#6B3E3E"), 28);
-            UnityEventTools.AddVoidPersistentListener(drop.onClick, touch.OnDrop);
+            // Управление только джойстиком: тап = удар, отвод вверх = прыжок.
+            // Отдельных кнопок нет — как в оригинале.
 
             // ПК-ввод рядом с тачем: один билд играбелен и на телефоне, и на компьютере.
             var keyboard = touchGo.AddComponent<KeyboardInput>();

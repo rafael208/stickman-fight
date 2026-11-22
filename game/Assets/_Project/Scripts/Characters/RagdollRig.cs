@@ -54,6 +54,7 @@ namespace StickmanFight.Characters
         private readonly List<Vector3> _initialLocalPositions = new List<Vector3>(10);
         private readonly List<Quaternion> _initialLocalRotations = new List<Quaternion>(10);
 
+        public int Facing = 1;
         private bool _poseHeld = true;
         private float _strengthScale = 1f;
 
@@ -199,8 +200,8 @@ namespace StickmanFight.Characters
         /// <summary>Боевая стойка: руки согнуты и вынесены вперёд, колени мягкие.</summary>
         public void SetStance()
         {
-            SetJointTarget(JointShoulderL, -22f);
-            SetJointTarget(JointShoulderR, -22f);
+            SetJointTarget(JointShoulderL, -22f * Facing);
+            SetJointTarget(JointShoulderR, -22f * Facing);
             SetJointTarget(JointElbowL, -42f);
             SetJointTarget(JointElbowR, -42f);
             SetJointTarget(JointHipL, 0f);

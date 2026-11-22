@@ -297,8 +297,8 @@ namespace StickmanFight.Characters
             Rig.SetJointTarget(RagdollRig.JointKneeL, Mathf.Max(0f, -s) * amp * 1.7f + 7f);
             Rig.SetJointTarget(RagdollRig.JointKneeR, Mathf.Max(0f, s) * amp * 1.7f + 7f);
 
-            Rig.SetJointTarget(RagdollRig.JointShoulderL, -s * amp * 0.9f - 22f);
-            Rig.SetJointTarget(RagdollRig.JointShoulderR, s * amp * 0.9f - 22f);
+            Rig.SetJointTarget(RagdollRig.JointShoulderL, -s * amp * 0.9f - 22f * Facing);
+            Rig.SetJointTarget(RagdollRig.JointShoulderR, s * amp * 0.9f - 22f * Facing);
         }
 
         private void ApplyMovement(float dt)
@@ -319,6 +319,7 @@ namespace StickmanFight.Characters
             }
 
             if (Mathf.Abs(MoveX) > 0.1f) Facing = MoveX > 0f ? 1 : -1;
+            if (Rig != null) Rig.Facing = Facing;
 
             if (grounded) _coyoteTimer = config.coyoteTime;
         }

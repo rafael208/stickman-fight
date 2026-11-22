@@ -25,8 +25,8 @@ namespace StickmanFight.Inputs
 
         private void Update()
         {
-            // Отвёл джойстик вверх — прыжок.
-            if (joystick != null && joystick.ConsumeUp()) _jump = true;
+            // Держишь джойстик вверху — прыгает сам, отпускать не нужно (как в оригинале).
+            if (joystick != null && joystick.Value.y > 0.55f) _jump = true;
         }
         private bool _interact;
         private bool _drop;

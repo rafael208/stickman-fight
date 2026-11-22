@@ -57,6 +57,13 @@ namespace StickmanFight.UI
         /// <summary>Вешается на кнопку «Продолжить» в панели паузы.</summary>
         public void OnResumeClicked() => Resume();
 
+        /// <summary>Вешается на кнопку «В главное меню».</summary>
+        public void OnMenuClicked()
+        {
+            Time.timeScale = 1f;
+            UnityEngine.SceneManagement.SceneManager.LoadScene("10_MainMenu");
+        }
+
         /// <summary>Вешается на кнопку «Заново».</summary>
         public void OnRestartClicked()
         {
