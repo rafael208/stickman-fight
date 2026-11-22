@@ -26,6 +26,17 @@ namespace StickmanFight.Core
         public Vector2 max = new Vector2(9.5f, 4f);
 
         private Camera _camera;
+        private float _shakeTime;
+        private float _shakeDuration = 1f;
+        private float _shakeAmplitude;
+
+        /// <summary>Тряска камеры при попадании. amplitude — метры, duration — секунды.</summary>
+        public void Shake(float amplitude, float duration)
+        {
+            _shakeAmplitude = Mathf.Max(_shakeAmplitude, amplitude);
+            _shakeDuration = Mathf.Max(0.01f, duration);
+            _shakeTime = _shakeDuration;
+        }
 
         private void Awake()
         {
@@ -70,6 +81,15 @@ namespace StickmanFight.Core
                 -10f);
 
             transform.position = Vector3.Lerp(transform.position, desired, k);
+
+            // Тряска поверх позиции, с затуханием.
+            if (_shakeTime > 0f)
+            {
+                _shakeTime -= Time.unscaledDeltaTime;
+                float strength = _shakeAmplitude * (_shakeTime / _shakeDuration);
+                var jitter = Random.insideUnitCircle * strength;
+                transform.position += new Vector3(jitter.x, jitter.y, 0f);
+            }
         }
 
         /// <summary>Центр и разброс живой группы бойцов. Мёртвых не учитываем, чтобы камера не прыгала.</summary>

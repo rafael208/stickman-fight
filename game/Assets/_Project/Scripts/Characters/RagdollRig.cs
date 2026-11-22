@@ -22,6 +22,8 @@ namespace StickmanFight.Characters
         private readonly List<Rigidbody2D> _all = new List<Rigidbody2D>(6);
         private readonly List<HingeJoint2D> _joints = new List<HingeJoint2D>(5);
         private readonly List<float> _jointTargets = new List<float>(5);
+        private readonly List<Vector3> _initialLocalPositions = new List<Vector3>(6);
+        private readonly List<Quaternion> _initialLocalRotations = new List<Quaternion>(6);
 
         /// <summary>Индексы суставов для адресного управления (например, взмах рукой).</summary>
         public const int JointArmL = 0;
@@ -94,6 +96,37 @@ namespace StickmanFight.Characters
                     Physics2D.IgnoreCollision(torsoCol, col, true);
                 }
             }
+
+            // Запоминаем стартовую позу для возрождения.
+            _initialLocalPositions.Clear();
+            _initialLocalRotations.Clear();
+            foreach (var rb in _all)
+            {
+                _initialLocalPositions.Add(rb.transform.localPosition);
+                _initialLocalRotations.Add(rb.transform.localRotation);
+            }
+        }
+
+        /// <summary>
+        /// Возвращает скелет в стартовую стойку: корень в rootWorldPos, все тела в исходные
+        /// локальные позы, скорости обнулены, моторы позы включены. Используется при респавне.
+        /// </summary>
+        public void ResetPose(Vector3 rootWorldPos)
+        {
+            transform.position = rootWorldPos;
+
+            for (int i = 0; i < _all.Count && i < _initialLocalPositions.Count; i++)
+            {
+                var rb = _all[i];
+                rb.transform.localPosition = _initialLocalPositions[i];
+                rb.transform.localRotation = _initialLocalRotations[i];
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+                rb.WakeUp();
+            }
+
+            ResetJointTargets();
+            SetPoseHeld(true);
         }
 
         private Rigidbody2D MakeBody(string partName, Vector2 localPos, float mass, int layer, CharacterConfig cfg)

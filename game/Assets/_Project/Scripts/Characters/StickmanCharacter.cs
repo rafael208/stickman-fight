@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using StickmanFight.Art;
+using StickmanFight.Core;
 
 namespace StickmanFight.Characters
 {
@@ -258,6 +259,7 @@ namespace StickmanFight.Characters
             _jumpBufferTimer = 0f;
             _coyoteTimer = 0f;
             SetState(CharacterState.Airborne);
+            SfxPlayer.Play("jump", 0.5f);
         }
 
         private void UpdateLocomotionState()
@@ -351,6 +353,33 @@ namespace StickmanFight.Characters
             body.AddForce(new Vector2(dir * UnityEngine.Random.Range(0.5f, 1.5f) * body.mass, 0f), ForceMode2D.Impulse);
 
             Debug.Log($"[Character] умер: {name}");
+            SfxPlayer.Play("ko", 0.8f);
+        }
+
+        /// <summary>
+        /// Возрождение: полный сброс здоровья, состояния, таймеров и позы скелета.
+        /// Оружие выбрасывается — после респавна бой начинается на равных.
+        /// </summary>
+        public void Respawn(Vector3 worldPos)
+        {
+            Hp = config != null ? config.maxHp : 100f;
+            _coyoteTimer = 0f;
+            _jumpBufferTimer = 0f;
+            _stunTimer = 0f;
+            _knockdownTimer = 0f;
+            _invulnerableTimer = config != null ? config.invulnerableTime : 0.35f;
+            _getUpTimer = 0f;
+            _deadTimer = 0f;
+            _groundedGrace = 0f;
+            Grounded = false;
+            Facing = 1;
+            MoveX = 0f;
+            JumpQueued = false;
+
+            if (Combat != null && Combat.Weapon != null) Combat.RequestDrop();
+
+            Rig.ResetPose(worldPos);
+            SetState(CharacterState.Standing);
         }
 
         /// <summary>Для тестового стенда: мгновенный «толчок» заданной силы в корпус.</summary>

@@ -25,6 +25,9 @@ namespace StickmanFight.Combat
 
         private static readonly Dictionary<HitKey, float> LastHitTimes = new Dictionary<HitKey, float>();
 
+        /// <summary>Событие реального попадания (для эффектов/звука). Вызывается после применения урона.</summary>
+        public static event System.Action<StickmanCharacter, DamageInfo> HitApplied;
+
         public static bool Apply(StickmanCharacter target, in DamageInfo info)
         {
             if (target == null || target.IsDead) return false;
@@ -46,6 +49,8 @@ namespace StickmanFight.Combat
 
             if (info.Source == DamageSource.Melee || info.Source == DamageSource.Projectile)
                 Hitstop.Play(info.Amount);
+
+            HitApplied?.Invoke(target, info);
 
             return true;
         }

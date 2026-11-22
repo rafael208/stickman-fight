@@ -7,6 +7,7 @@ param(
     [float]$Delay = 4.0,
     [string]$Shot = "",
     [switch]$NoBuild,
+    [switch]$AutoPlay,
     [string]$OutName = "pc"
 )
 
@@ -41,10 +42,13 @@ if (-not (Test-Path $exe)) { Write-Host "Нет $exe"; exit 1 }
 Remove-Item $Shot -ErrorAction SilentlyContinue
 Remove-Item $playerLog -ErrorAction SilentlyContinue
 
-$run = Start-Process -FilePath $exe -PassThru -ArgumentList @(
+$runArgs = @(
     "-screen-width", "1600", "-screen-height", "900", "-screen-fullscreen", "0",
     "-shot", $Shot, "-shotDelay", $Delay, "-logFile", $playerLog
 )
+if ($AutoPlay) { $runArgs += "-autoPlay" }
+
+$run = Start-Process -FilePath $exe -PassThru -ArgumentList $runArgs
 
 if (-not $run.WaitForExit(90000)) {
     Write-Host "Плеер не закрылся за 90 с — убиваю"

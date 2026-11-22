@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using StickmanFight.Characters;
 
@@ -43,6 +44,20 @@ namespace StickmanFight.Art
             color = tint;
             if (_torso == null) return;
             foreach (var s in All()) s.Fill.startColor = s.Fill.endColor = color;
+        }
+
+        /// <summary>Короткая вспышка другим цветом (попадание), потом возврат к базовому.</summary>
+        public void Flash(Color tint, float duration = 0.08f)
+        {
+            StopAllCoroutines();
+            StartCoroutine(FlashRoutine(tint, duration));
+        }
+
+        private IEnumerator FlashRoutine(Color tint, float duration)
+        {
+            SetColor(tint);
+            yield return new WaitForSeconds(duration);
+            SetColor(color);
         }
 
         private void Build()

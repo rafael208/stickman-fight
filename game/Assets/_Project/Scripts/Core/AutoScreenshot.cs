@@ -16,6 +16,15 @@ namespace StickmanFight.Core
         private float _delay = 2f;
         private bool _quitAfter = true;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void EnsureExists()
+        {
+            if (FindFirstObjectByType<AutoScreenshot>() != null) return;
+            var go = new GameObject("AutoScreenshot");
+            Object.DontDestroyOnLoad(go);
+            go.AddComponent<AutoScreenshot>();
+        }
+
         private void Awake()
         {
             var args = System.Environment.GetCommandLineArgs();

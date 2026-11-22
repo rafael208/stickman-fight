@@ -1,5 +1,6 @@
 using StickmanFight.Characters;
 using StickmanFight.Combat;
+using StickmanFight.Core;
 using StickmanFight.Weapons;
 using UnityEngine;
 
@@ -104,6 +105,8 @@ namespace StickmanFight.Combat
             _phase = Phase.Attack;
             _timer = 0f;
             _hitDone = false;
+
+            SfxPlayer.Play("swing", 0.45f, Random.Range(0.9f, 1.1f));
         }
 
         public void RequestInteract()
@@ -130,6 +133,7 @@ namespace StickmanFight.Combat
 
             weapon = target;
             weapon.Equip(character, handAnchor != null ? handAnchor : transform);
+            SfxPlayer.Play("pickup", 0.6f);
         }
 
         // --------------------------------------------------------------- атака
@@ -278,6 +282,7 @@ namespace StickmanFight.Combat
             }
 
             weapon.ConsumeAmmo();
+            SfxPlayer.Play("shoot", 0.55f, Random.Range(0.95f, 1.05f));
             Debug.Log($"[Hit] выстрел, патронов осталось {weapon.Ammo:0}");
         }
 

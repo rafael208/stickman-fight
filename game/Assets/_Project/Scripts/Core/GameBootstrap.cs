@@ -24,6 +24,12 @@ namespace StickmanFight
             Debug.Log($"[Boot] {BuildInfo.ProductName} {BuildInfo.FullVersion} на {Application.platform}");
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void LogScene()
+        {
+            Debug.Log($"[Scene] загружена: {UnityEngine.SceneManagement.SceneManager.GetActiveScene().name}");
+        }
+
         /// <summary>Правила из ТЗ, раздел 7.5.</summary>
         private static void ApplyCollisionMatrix()
         {

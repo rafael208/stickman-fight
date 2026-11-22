@@ -6,6 +6,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using StickmanFight.AI;
 using StickmanFight.Art;
 using StickmanFight.Characters;
 using StickmanFight.Core;
@@ -35,7 +36,8 @@ namespace StickmanFight.EditorTools
 
             var scenes = new List<string>
             {
-                BuildArena(),     // S2/S3: основная сцена (управление + бой)
+                BuildMenu(),      // главное меню — точка входа
+                BuildArena(),     // бой против бота
                 BuildTestBed(),   // S1: приёмка стойки и ragdoll
                 BuildBoot()
             };
@@ -44,6 +46,111 @@ namespace StickmanFight.EditorTools
             AssetDatabase.SaveAssets();
             Debug.Log($"[Scenes] собрано {scenes.Count}: {string.Join(", ", scenes)}");
             return scenes.ToArray();
+        }
+
+        // ----------------------------------------------------------- Main menu
+
+        /// <summary>Главное меню: фон как на арене, два декоративных стикмена и кнопка «ИГРАТЬ».</summary>
+        private static string BuildMenu()
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            var camGo = new GameObject("Main Camera");
+            camGo.tag = "MainCamera";
+            var cam = camGo.AddComponent<Camera>();
+            cam.orthographic = true;
+            cam.orthographicSize = 5f;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = Hex(Palette.SkyBottom);
+            camGo.transform.position = new Vector3(0f, 2.5f, -10f);
+            camGo.AddComponent<AudioListener>();
+
+            var backdropGo = new GameObject("Backdrop");
+            var backdrop = backdropGo.AddComponent<ArenaBackdrop>();
+            backdrop.cam = cam;
+            backdrop.waterLevel = -3.2f;
+            backdrop.levelBounds = new Vector2(-14f, 14f);
+            backdrop.skyTop = Hex(Palette.SkyTop);
+            backdrop.skyBottom = Hex(Palette.SkyBottom);
+            backdrop.cloudColor = Hex(Palette.Cloud);
+            backdrop.waterColor = Hex(Palette.Water);
+            backdrop.crestColor = Hex(Palette.WaterCrest);
+            backdrop.hillColor = Hex(Palette.Hill);
+            backdrop.hillTop = Hex(Palette.HillTop);
+
+            // Декоративные стикмены по краям.
+            CreateFigure("FigureLeft", new Vector3(-4.5f, -2.6f), Palette.Player);
+            CreateFigure("FigureRight", new Vector3(4.5f, -2.6f), Palette.Enemy);
+
+            // UI.
+            var canvasGo = new GameObject("UI");
+            var canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 100;
+
+            var scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+            canvasGo.AddComponent<GraphicRaycaster>();
+
+            var safeGo = new GameObject("SafeRoot", typeof(RectTransform));
+            safeGo.transform.SetParent(canvasGo.transform, false);
+            var safeRt = (RectTransform)safeGo.transform;
+            safeRt.anchorMin = Vector2.zero;
+            safeRt.anchorMax = Vector2.one;
+            safeRt.offsetMin = Vector2.zero;
+            safeRt.offsetMax = Vector2.zero;
+            safeGo.AddComponent<SafeAreaFitter>();
+            Transform uiRoot = safeGo.transform;
+
+            var esGo = new GameObject("EventSystem");
+            esGo.AddComponent<EventSystem>();
+            esGo.AddComponent<StandaloneInputModule>();
+
+            var title = MakeText(uiRoot, "Title", "STICK FIGHT", 150, Hex(Palette.Text));
+            title.rectTransform.anchorMin = new Vector2(0.5f, 1f);
+            title.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+            title.rectTransform.pivot = new Vector2(0.5f, 1f);
+            title.rectTransform.sizeDelta = new Vector2(1200f, 200f);
+            title.rectTransform.anchoredPosition = new Vector2(0f, -110f);
+            title.alignment = TextAnchor.MiddleCenter;
+            title.fontStyle = FontStyle.Bold;
+
+            var subtitle = MakeText(uiRoot, "Subtitle", "ЛОКАЛЬНАЯ ДУЭЛЬ НА ФИЗИКЕ", 42, Hex(Palette.Accent));
+            subtitle.rectTransform.anchorMin = new Vector2(0.5f, 1f);
+            subtitle.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+            subtitle.rectTransform.pivot = new Vector2(0.5f, 1f);
+            subtitle.rectTransform.sizeDelta = new Vector2(1200f, 60f);
+            subtitle.rectTransform.anchoredPosition = new Vector2(0f, -320f);
+            subtitle.alignment = TextAnchor.MiddleCenter;
+
+            var playBtn = MakeTapButton(uiRoot, "BtnPlay", "ИГРАТЬ", new Vector2(520f, 160f),
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -40f), Hex("#3E6B4A"), 58);
+
+            var version = MakeText(uiRoot, "Version", BuildInfo.Label, 28, Hex(Palette.Text));
+            version.rectTransform.anchorMin = new Vector2(0f, 0f);
+            version.rectTransform.anchorMax = new Vector2(0f, 0f);
+            version.rectTransform.pivot = new Vector2(0f, 0f);
+            version.rectTransform.sizeDelta = new Vector2(300f, 40f);
+            version.rectTransform.anchoredPosition = new Vector2(28f, 20f);
+            version.alignment = TextAnchor.LowerLeft;
+
+            var menu = new GameObject("MenuUI").AddComponent<MenuUI>();
+            UnityEventTools.AddVoidPersistentListener(playBtn.onClick, menu.OnPlay);
+
+            string path = $"{ScenesDir}/10_MainMenu.unity";
+            EditorSceneManager.SaveScene(scene, path);
+            return path;
+        }
+
+        private static void CreateFigure(string name, Vector3 position, string colorHex)
+        {
+            var go = new GameObject(name);
+            go.transform.position = position;
+            var fig = go.AddComponent<StickmanFigure>();
+            fig.SetColor(Hex(colorHex));
         }
 
         // ---------------------------------------------------------- Arena (S2/S3)
@@ -106,13 +213,22 @@ namespace StickmanFight.EditorTools
             var enemy = CreateCharacter("Enemy", new Vector3(1.1f, 0.35f), GameLayers.EnemyBody, Palette.Enemy);
             follow.targets = new[] { player, enemy };
 
+            // Сок и звук.
+            var fxGo = new GameObject("CombatFx");
+            var fx = fxGo.AddComponent<CombatFx>();
+            fx.cameraFollow = follow;
+            new GameObject("DamageNumbers").AddComponent<DamageNumbers>();
+
             AddHealthBar(player);
             AddHealthBar(enemy);
 
+            AddStockIndicator(player, Hex(Palette.Player));
+            AddStockIndicator(enemy, Hex(Palette.Enemy));
+
             // --- оружие на балке ---
-            var sword = CreateWeapon("Weapon_Sword", WeaponKind.Sword, new Vector3(-2.8f, 0.7f));
-            var hammer = CreateWeapon("Weapon_Hammer", WeaponKind.Hammer, new Vector3(-4.6f, 0.7f));
-            var pistol = CreateWeapon("Weapon_Pistol", WeaponKind.Pistol, new Vector3(3.2f, 0.7f));
+            var sword = CreateWeapon("Weapon_Sword", WeaponKind.Sword, new Vector3(0f, 0.7f));
+            var hammer = CreateWeapon("Weapon_Hammer", WeaponKind.Hammer, new Vector3(-3.6f, 0.7f));
+            var pistol = CreateWeapon("Weapon_Pistol", WeaponKind.Pistol, new Vector3(3.4f, 0.7f));
 
             // --- UI ---
             var canvasGo = new GameObject("UI");
@@ -238,17 +354,72 @@ namespace StickmanFight.EditorTools
             router.target = player;
             router.source = composite;
 
-            // Автоскриншот для ПК-проверок (без ключа -shot ничего не делает).
-            new GameObject("AutoScreenshot").AddComponent<AutoScreenshot>();
+            // Бот управляет противником через тот же InputRouter, что и игрок (без читов).
+            var ai = enemy.gameObject.AddComponent<AIBrain>();
+            ai.self = enemy;
+            ai.target = player;
+            var aiRouter = enemy.gameObject.AddComponent<InputRouter>();
+            aiRouter.target = enemy;
+            aiRouter.source = ai;
 
-            // Автопрогон G2/G3
-            var testGo = new GameObject("ArenaTest");
-            var test = testGo.AddComponent<ArenaTest>();
-            test.player = player;
-            test.enemy = enemy;
-            test.sword = sword;
-            test.hammer = hammer;
-            test.pistol = pistol;
+            // Счёт по раундам.
+            var roundScore = MakeText(uiRoot, "RoundScore", "0 : 0", 52, Hex(Palette.Text));
+            Anchor(roundScore.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f));
+            roundScore.rectTransform.pivot = new Vector2(0.5f, 1f);
+            roundScore.rectTransform.sizeDelta = new Vector2(300f, 64f);
+            roundScore.rectTransform.anchoredPosition = new Vector2(0f, -118f);
+            roundScore.alignment = TextAnchor.UpperCenter;
+            roundScore.fontStyle = FontStyle.Bold;
+
+            // Панель результата раунда/матча.
+            var resultPanel = new GameObject("ResultPanel", typeof(RectTransform));
+            resultPanel.transform.SetParent(uiRoot, false);
+            var resRt = (RectTransform)resultPanel.transform;
+            resRt.anchorMin = Vector2.zero; resRt.anchorMax = Vector2.one;
+            resRt.offsetMin = Vector2.zero; resRt.offsetMax = Vector2.zero;
+            var resImage = resultPanel.AddComponent<Image>();
+            resImage.color = new Color(0f, 0f, 0f, 0.66f);
+
+            var resTitle = MakeText(resultPanel.transform, "ResultTitle", "РАУНД", 96, Hex(Palette.Accent));
+            resTitle.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            resTitle.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            resTitle.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            resTitle.rectTransform.sizeDelta = new Vector2(1000f, 140f);
+            resTitle.rectTransform.anchoredPosition = new Vector2(0f, 170f);
+            resTitle.alignment = TextAnchor.MiddleCenter;
+            resTitle.fontStyle = FontStyle.Bold;
+
+            var resSubtitle = MakeText(resultPanel.transform, "ResultSubtitle", "", 44, Hex(Palette.Text));
+            resSubtitle.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            resSubtitle.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            resSubtitle.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            resSubtitle.rectTransform.sizeDelta = new Vector2(900f, 70f);
+            resSubtitle.rectTransform.anchoredPosition = new Vector2(0f, 70f);
+            resSubtitle.alignment = TextAnchor.MiddleCenter;
+
+            var rematchBtn = MakeTapButton(resultPanel.transform, "BtnRematch", "РЕВАНШ", new Vector2(420f, 110f),
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -90f), Hex("#3E6B4A"), 40);
+            var menuBtn = MakeTapButton(resultPanel.transform, "BtnMenu", "В МЕНЮ", new Vector2(420f, 110f),
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -230f), Hex("#2F5578"), 40);
+
+            // Контроллер матча: stocks, раунды, респавн, результат.
+            var matchGo = new GameObject("MatchController");
+            var match = matchGo.AddComponent<MatchController>();
+            match.player = player;
+            match.enemy = enemy;
+            match.playerSpawn = new Vector2(-1.1f, 0.35f);
+            match.enemySpawn = new Vector2(1.1f, 0.35f);
+            match.roundScoreText = roundScore;
+            match.resultPanel = resultPanel;
+            match.resultTitle = resTitle;
+            match.resultSubtitle = resSubtitle;
+            match.rematchButton = rematchBtn;
+            match.menuButton = menuBtn;
+            match.playerStocksUi = player.gameObject.GetComponent<StockIndicator>();
+            match.enemyStocksUi = enemy.gameObject.GetComponent<StockIndicator>();
+
+            UnityEventTools.AddVoidPersistentListener(rematchBtn.onClick, match.OnRematch);
+            UnityEventTools.AddVoidPersistentListener(menuBtn.onClick, match.OnMenu);
 
             string path = $"{ScenesDir}/20_Battle_Arena.unity";
             EditorSceneManager.SaveScene(scene, path);
@@ -278,6 +449,14 @@ namespace StickmanFight.EditorTools
             var bar = character.gameObject.AddComponent<HealthBarAbove>();
             bar.character = character;
             bar.offset = new Vector3(0f, 0.45f, 0f);
+        }
+
+        private static void AddStockIndicator(StickmanCharacter character, Color fill)
+        {
+            var ind = character.gameObject.AddComponent<StockIndicator>();
+            ind.character = character;
+            ind.fillColor = fill;
+            ind.offset = new Vector3(0f, 0.14f, 0f);
         }
 
         private static void CreateStrip(string name, Vector2 from, Vector2 to, float width, string colorHex,
