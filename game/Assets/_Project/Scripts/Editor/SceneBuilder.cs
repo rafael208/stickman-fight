@@ -329,10 +329,8 @@ namespace StickmanFight.EditorTools
             var touchGo = new GameObject("TouchInput");
             var touch = touchGo.AddComponent<TouchInput>();
 
-            var left = MakeHoldButton(uiRoot, "BtnLeft", "◀", new Vector2(170f, 170f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(120f, 120f), new Color(0.10f, 0.16f, 0.30f, 0.38f), true, Hex("#FFFFFF"));
-            var right = MakeHoldButton(uiRoot, "BtnRight", "▶", new Vector2(170f, 170f), new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(320f, 120f), new Color(0.10f, 0.16f, 0.30f, 0.38f), true, Hex("#FFFFFF"));
-            touch.left = left.GetComponent<HoldButton>();
-            touch.right = right.GetComponent<HoldButton>();
+            var joystick = MakeJoystick(uiRoot, new Vector2(280f, 280f), new Vector2(180f, 180f));
+            touch.joystick = joystick.GetComponent<VirtualJoystick>();
 
             var jump = MakeTapButton(uiRoot, "BtnJump", "⤒", new Vector2(150f, 150f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-44f, 300f), new Color(0.10f, 0.16f, 0.30f, 0.38f), 56, true, Hex("#FFFFFF"));
             UnityEventTools.AddVoidPersistentListener(jump.onClick, touch.OnJump);
@@ -592,6 +590,40 @@ namespace StickmanFight.EditorTools
 
             AddLabel(go.transform, label, fontSize, labelColor ?? Hex("#10131A"));
             return button;
+        }
+
+        private static GameObject MakeJoystick(Transform parent, Vector2 size, Vector2 position)
+        {
+            var go = new GameObject("Joystick", typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 0f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = size;
+            rt.anchoredPosition = position;
+
+            var knobSprite = UnityEditor.AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+
+            var bg = go.AddComponent<Image>();
+            if (knobSprite != null) { bg.sprite = knobSprite; bg.type = Image.Type.Simple; }
+            bg.color = new Color(0.10f, 0.16f, 0.30f, 0.34f);
+
+            var knobGo = new GameObject("Knob", typeof(RectTransform));
+            knobGo.transform.SetParent(go.transform, false);
+            var krt = (RectTransform)knobGo.transform;
+            krt.anchorMin = krt.anchorMax = new Vector2(0.5f, 0.5f);
+            krt.pivot = new Vector2(0.5f, 0.5f);
+            krt.sizeDelta = size * 0.42f;
+            krt.anchoredPosition = Vector2.zero;
+            var kimg = knobGo.AddComponent<Image>();
+            if (knobSprite != null) { kimg.sprite = knobSprite; kimg.type = Image.Type.Simple; }
+            kimg.color = new Color(1f, 1f, 1f, 0.55f);
+            kimg.raycastTarget = false;
+
+            var joy = go.AddComponent<VirtualJoystick>();
+            joy.knob = krt;
+            joy.radius = size.x * 0.33f;
+            return go;
         }
 
         private static GameObject MakeHoldButton(Transform parent, string name, string label, Vector2 size,

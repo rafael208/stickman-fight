@@ -94,10 +94,10 @@ namespace StickmanFight.Characters
 
         [Header("Нокдаун и стан")]
         [Tooltip("Импульс на корпус, после которого персонаж падает, Н·с")]
-        public float knockdownImpulse = 12f;
+        public float knockdownImpulse = 18f;
         [Tooltip("Урон за один хит, после которого персонаж падает")]
-        public float knockdownDamage = 25f;
-        public float getUpTime = 0.9f;
+        public float knockdownDamage = 35f;
+        public float getUpTime = 0.6f;
         public float invulnerableTime = 0.35f;
         public float stunTime = 0.35f;
         [Tooltip("На сколько приподнять корпус при подъёме, м")]

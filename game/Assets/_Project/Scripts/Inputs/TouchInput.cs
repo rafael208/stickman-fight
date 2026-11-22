@@ -9,7 +9,9 @@ namespace StickmanFight.Inputs
     /// </summary>
     public class TouchInput : MonoBehaviour, IInputSource
     {
-        [Header("Движение (удержание)")]
+        [Header("Движение")]
+        public StickmanFight.UI.VirtualJoystick joystick;
+        [Tooltip("Резерв: кнопки-стрелки, если джойстик не задан")]
         public HoldButton left;
         public HoldButton right;
 
@@ -22,6 +24,7 @@ namespace StickmanFight.Inputs
         {
             get
             {
+                if (joystick != null) return joystick.DeadZonedX;
                 float x = 0f;
                 if (left != null && left.IsHeld) x -= 1f;
                 if (right != null && right.IsHeld) x += 1f;

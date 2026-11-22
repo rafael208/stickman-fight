@@ -70,9 +70,9 @@ MonoBehaviour:
   kneeLimit: 130
   armLimit: 160
   legLimit: 90
-  knockdownImpulse: 12
-  knockdownDamage: 25
-  getUpTime: 0.9
+  knockdownImpulse: 18
+  knockdownDamage: 35
+  getUpTime: 0.6
   invulnerableTime: 0.35
   stunTime: 0.35
   getUpLiftHeight: 0.45

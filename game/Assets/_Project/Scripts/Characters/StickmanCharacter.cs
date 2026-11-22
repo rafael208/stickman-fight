@@ -211,6 +211,14 @@ namespace StickmanFight.Characters
             float dx = body.position.x - Rig.GetFeetCenterX();      // м
             body.AddForce(new Vector2(-dx * config.torsoPosKp * body.mass, 0f), ForceMode2D.Force);
 
+            // Страховка от заваливания: при заметном наклоне жёстко доворачиваем корпус к вертикали.
+            // Без неё тело медленно «уезжает» и падает от любого действия — как раз то, что мешало играть.
+            if (Mathf.Abs(angleErr) > 6f)
+            {
+                body.MoveRotation(Mathf.MoveTowardsAngle(body.rotation, 0f, config.rightingRate * dt));
+                body.angularVelocity *= 0.4f;
+            }
+
             // Ограничение угловой скорости (в Unity 6.3 Rigidbody2D.maxAngularVelocity удалён).
             float maxDeg = config.maxAngularVelocity * Mathf.Rad2Deg;
             if (Mathf.Abs(body.angularVelocity) > maxDeg)
