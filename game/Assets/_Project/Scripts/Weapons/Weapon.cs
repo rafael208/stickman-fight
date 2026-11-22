@@ -18,6 +18,7 @@ namespace StickmanFight.Weapons
 
         public bool IsHeld { get; private set; }
         public StickmanCharacter Owner { get; private set; }
+        private Transform _hand;
         public float Ammo { get; private set; }
         public bool IsReloading { get; set; }
 
@@ -75,10 +76,12 @@ namespace StickmanFight.Weapons
             body.simulated = false;
             if (hitbox != null) hitbox.enabled = false;
 
-            transform.SetParent(hand, false);
-            transform.localPosition = new Vector3(0.22f, 0f, 0f);
-            transform.localRotation = Quaternion.identity;
+            // Не делаем оружие ребёнком кисти: иначе при зеркале тела оно остаётся
+            // на физической руке и «лагает» при развороте. Держим позицию сами.
+            _hand = hand;
+            transform.SetParent(null, true);
             transform.localScale = _defaultScale;
+            SnapToHand();
 
             Ammo = config.ammo;
             Debug.Log($"[Weapon] {name} взят {owner?.name}");
@@ -86,14 +89,27 @@ namespace StickmanFight.Weapons
 
         private void LateUpdate()
         {
-            // Зеркало через локальные координаты: оружие переезжает на другую сторону кисти,
-            // но не «дёргается», потому что мы не трогаем мировую позицию (её ведёт рука).
             if (Owner == null || !IsHeld) return;
+            SnapToHand();
+        }
 
-            float face = Owner.Facing < 0 ? -1f : 1f;
-            transform.localPosition = new Vector3(0.22f * face, 0f, 0f);
-            transform.localScale = new Vector3(
-                Mathf.Abs(_defaultScale.x) * face, _defaultScale.y, _defaultScale.z);
+        /// <summary>Ставит оружие в кисть с учётом зеркала персонажа.</summary>
+        private void SnapToHand()
+        {
+            if (_hand == null || Owner == null || Owner.Rig == null || Owner.Rig.Torso == null) return;
+
+            Vector3 pos = _hand.position;
+            Quaternion rot = _hand.rotation;
+
+            if (Owner.Facing < 0)
+            {
+                float torsoX = Owner.Rig.Torso.position.x;
+                pos.x = 2f * torsoX - pos.x;
+                rot = Quaternion.Euler(0f, 0f, 180f - _hand.eulerAngles.z);
+            }
+
+            pos += rot * new Vector3(0.22f, 0f, 0f);
+            transform.SetPositionAndRotation(pos, rot);
         }
 
         public void Drop(Vector2 impulse)
