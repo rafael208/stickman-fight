@@ -27,8 +27,10 @@ namespace StickmanFight.Characters
         public RagdollVisual Visual { get; private set; }
         public Combat.CharacterCombat Combat { get; private set; }
 
-        [Tooltip("Оружие, выбранное в меню: выдаётся при старте боя")]
-        public Weapon startWeapon;
+        [Tooltip("Конфиги оружия: [0]=меч, [1]=молот, [2]=пистолет")]
+        public WeaponConfig[] weaponConfigs;
+        [Tooltip("true — это игрок (берёт MatchSettings.PlayerWeapon), false — бот")]
+        public bool isPlayer;
         public CharacterState State { get; private set; } = CharacterState.Standing;
         public float Hp { get; private set; }
         public bool IsDead => State == CharacterState.Dead;
@@ -110,7 +112,31 @@ namespace StickmanFight.Characters
             Combat.character = this;
             Combat.handAnchor = hand.transform;
 
-            if (startWeapon != null) Combat.Equip(startWeapon);
+            // Оружие выбирается в меню и выдаётся здесь, в рантайме —
+            // иначе в сцене лежит один и тот же меч для всех.
+            int kind = (int)(isPlayer ? MatchSettings.PlayerWeapon : MatchSettings.EnemyWeapon);
+            if (weaponConfigs != null && kind >= 0 && kind < weaponConfigs.Length && weaponConfigs[kind] != null)
+            {
+                var cfg = weaponConfigs[kind];
+                var go = new GameObject("Weapon_" + cfg.kind) { layer = GameLayers.Weapon };
+                go.transform.position = hand.transform.position;
+
+                var rb = go.AddComponent<Rigidbody2D>();
+                rb.mass = cfg.mass;
+                rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+                rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+
+                var col = go.AddComponent<BoxCollider2D>();
+                col.size = cfg.visualSize;
+
+                var weapon = go.AddComponent<Weapon>();
+                weapon.config = cfg;
+                weapon.body = rb;
+                weapon.hitbox = col;
+                weapon.Initialize();
+
+                Combat.Equip(weapon);
+            }
         }
 
         // ------------------------------------------------------------------ цикл

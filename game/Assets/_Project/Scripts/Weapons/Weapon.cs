@@ -27,6 +27,25 @@ namespace StickmanFight.Weapons
 
         public bool IsPistol => config != null && config.kind == WeaponKind.Pistol;
 
+        public void Initialize()
+        {
+            if (body == null) body = GetComponent<Rigidbody2D>();
+            if (hitbox == null) hitbox = GetComponent<Collider2D>();
+
+            _visual = GetComponent<WeaponVisual>();
+            if (_visual == null) _visual = gameObject.AddComponent<WeaponVisual>();
+
+            _defaultParent = transform.parent;
+            _defaultScale = transform.localScale;
+
+            if (config != null)
+            {
+                body.mass = config.mass;
+                Ammo = config.ammo;
+                _visual.Build(config);
+            }
+        }
+
         private void Awake()
         {
             if (body == null) body = GetComponent<Rigidbody2D>();

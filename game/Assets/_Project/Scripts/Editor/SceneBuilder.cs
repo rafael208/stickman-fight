@@ -246,11 +246,14 @@ namespace StickmanFight.EditorTools
             AddStockIndicator(enemy, Hex(Palette.Enemy));
 
             // --- оружие на балке ---
-            // Оружие выбрано в меню и действует весь бой (как в оригинале) — подбирать нечего.
-            var playerWeapon = CreateWeapon("P_Weapon", StickmanFight.Core.MatchSettings.PlayerWeapon, new Vector3(-4.2f, 1.1f));
-            player.startWeapon = playerWeapon;
-            var enemyWeapon = CreateWeapon("E_Weapon", StickmanFight.Core.MatchSettings.EnemyWeapon, new Vector3(4.2f, 1.1f));
-            enemy.startWeapon = enemyWeapon;
+            // Три варианта оружия на бойца: в рантайме берётся выбранный в меню.
+            var swordCfg = ConfigBuilder.EnsureWeapon(WeaponKind.Sword);
+            var hammerCfg = ConfigBuilder.EnsureWeapon(WeaponKind.Hammer);
+            var pistolCfg = ConfigBuilder.EnsureWeapon(WeaponKind.Pistol);
+            player.weaponConfigs = new[] { swordCfg, hammerCfg, pistolCfg };
+            enemy.weaponConfigs = new[] { swordCfg, hammerCfg, pistolCfg };
+            player.isPlayer = true;
+            enemy.isPlayer = false;
 
             // --- UI ---
             var canvasGo = new GameObject("UI");
