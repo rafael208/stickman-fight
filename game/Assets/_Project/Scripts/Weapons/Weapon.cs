@@ -86,21 +86,14 @@ namespace StickmanFight.Weapons
 
         private void LateUpdate()
         {
-            // Оружие поворачивается вместе с бойцом: при движении влево — зеркалится.
-            if (Owner == null || Owner.Rig == null || Owner.Rig.Torso == null) return;
-            if (!IsHeld) return;
+            // Зеркало через локальные координаты: оружие переезжает на другую сторону кисти,
+            // но не «дёргается», потому что мы не трогаем мировую позицию (её ведёт рука).
+            if (Owner == null || !IsHeld) return;
 
-            int face = Owner.Facing;
+            float face = Owner.Facing < 0 ? -1f : 1f;
+            transform.localPosition = new Vector3(0.22f * face, 0f, 0f);
             transform.localScale = new Vector3(
                 Mathf.Abs(_defaultScale.x) * face, _defaultScale.y, _defaultScale.z);
-
-            if (face < 0)
-            {
-                float torsoX = Owner.Rig.Torso.position.x;
-                var p = transform.position;
-                p.x = 2f * torsoX - p.x;
-                transform.position = p;
-            }
         }
 
         public void Drop(Vector2 impulse)

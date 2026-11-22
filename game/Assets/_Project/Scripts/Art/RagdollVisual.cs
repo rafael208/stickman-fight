@@ -146,28 +146,14 @@ namespace StickmanFight.Art
             if (_rig == null || _rig.Torso == null) return;
             if (_parts.Count == 0) Build();
 
-            // Зеркалим весь силуэт относительно корпуса, когда персонаж идёт влево.
-            // Без этого тело «всегда смотрит вправо», сколько ни разворачивай суставы.
-            float torsoX = _rig.Torso.position.x;
-            int face = _rig.Facing;
-
             for (int i = 0; i < _parts.Count; i++)
             {
                 var p = _parts[i];
                 if (p.Body == null) continue;
 
                 var t = p.Body.transform;
-                var pos = t.position;
-                var rot = t.rotation;
-
-                if (face < 0)
-                {
-                    pos.x = 2f * torsoX - pos.x;
-                    rot = Quaternion.Euler(0f, 0f, -t.eulerAngles.z);
-                }
-
-                p.Outline.transform.SetPositionAndRotation(pos, rot);
-                p.Fill.transform.SetPositionAndRotation(pos, rot);
+                p.Outline.transform.SetPositionAndRotation(t.position, t.rotation);
+                p.Fill.transform.SetPositionAndRotation(t.position, t.rotation);
             }
         }
     }
