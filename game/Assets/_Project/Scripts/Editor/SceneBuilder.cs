@@ -123,7 +123,7 @@ namespace StickmanFight.EditorTools
             subtitle.rectTransform.anchorMax = new Vector2(0.5f, 1f);
             subtitle.rectTransform.pivot = new Vector2(0.5f, 1f);
             subtitle.rectTransform.sizeDelta = new Vector2(1200f, 60f);
-            subtitle.rectTransform.anchoredPosition = new Vector2(0f, -320f);
+            subtitle.rectTransform.anchoredPosition = new Vector2(0f, -215f);
             subtitle.alignment = TextAnchor.MiddleCenter;
 
             var playBtn = MakeTapButton(uiRoot, "BtnPlay", "ИГРАТЬ", new Vector2(520f, 160f),
@@ -137,7 +137,23 @@ namespace StickmanFight.EditorTools
             version.rectTransform.anchoredPosition = new Vector2(28f, 20f);
             version.alignment = TextAnchor.LowerLeft;
 
+            // Выбор оружия на весь бой (как в оригинале): меч / молот / пистолет.
+            var weaponButtons = new Button[3];
+            var weaponLabels = new Text[3];
+            string[] weaponNames = { "МЕЧ", "МОЛОТ", "ПИСТОЛЕТ" };
+            for (int i = 0; i < 3; i++)
+            {
+                float x = (i - 1) * 260f;
+                var wb = MakeTapButton(uiRoot, "BtnWeapon" + i, weaponNames[i], new Vector2(230f, 96f),
+                    new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 150f), Hex("#2A3550"), 34);
+                weaponButtons[i] = wb;
+                var lbl = wb.GetComponentInChildren<Text>();
+                if (lbl != null) weaponLabels[i] = lbl;
+            }
+
             var menu = new GameObject("MenuUI").AddComponent<MenuUI>();
+            menu.weaponButtons = weaponButtons;
+            menu.weaponLabels = weaponLabels;
             UnityEventTools.AddVoidPersistentListener(playBtn.onClick, menu.OnPlay);
 
             string path = $"{ScenesDir}/10_MainMenu.unity";
@@ -213,8 +229,8 @@ namespace StickmanFight.EditorTools
             hazard.lethalY = -1.2f;
 
             // --- бойцы ---
-            var player = CreateCharacter("Player", new Vector3(-1.1f, 0.35f), GameLayers.PlayerBody, Palette.Player);
-            var enemy = CreateCharacter("Enemy", new Vector3(1.1f, 0.35f), GameLayers.EnemyBody, Palette.Enemy);
+            var player = CreateCharacter("Player", new Vector3(-4.2f, 0.35f), GameLayers.PlayerBody, Palette.Player);
+            var enemy = CreateCharacter("Enemy", new Vector3(4.2f, 0.35f), GameLayers.EnemyBody, Palette.Enemy);
             follow.targets = new[] { player, enemy };
 
             // Сок и звук.
@@ -230,9 +246,11 @@ namespace StickmanFight.EditorTools
             AddStockIndicator(enemy, Hex(Palette.Enemy));
 
             // --- оружие на балке ---
-            var sword = CreateWeapon("Weapon_Sword", WeaponKind.Sword, new Vector3(0f, 0.7f));
-            var hammer = CreateWeapon("Weapon_Hammer", WeaponKind.Hammer, new Vector3(-3.6f, 0.7f));
-            var pistol = CreateWeapon("Weapon_Pistol", WeaponKind.Pistol, new Vector3(3.4f, 0.7f));
+            // Оружие выбрано в меню и действует весь бой (как в оригинале) — подбирать нечего.
+            var playerWeapon = CreateWeapon("P_Weapon", StickmanFight.Core.MatchSettings.PlayerWeapon, new Vector3(-4.2f, 1.1f));
+            player.startWeapon = playerWeapon;
+            var enemyWeapon = CreateWeapon("E_Weapon", StickmanFight.Core.MatchSettings.EnemyWeapon, new Vector3(4.2f, 1.1f));
+            enemy.startWeapon = enemyWeapon;
 
             // --- UI ---
             var canvasGo = new GameObject("UI");

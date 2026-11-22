@@ -20,6 +20,12 @@ namespace StickmanFight.UI
         private RectTransform _area;
         private bool _active;
         private int _pointerId = -1;
+        private float _downTime;
+        private Vector2 _downPos;
+        private bool _upLatch;
+
+        /// <summary>Короткий тап по джойстику — это удар (атака только джойстиком).</summary>
+        public event System.Action OnTap;
 
         private void Awake()
         {
@@ -32,6 +38,8 @@ namespace StickmanFight.UI
             if (_active) return;
             _active = true;
             _pointerId = e.pointerId;
+            _downTime = Time.unscaledTime;
+            _downPos = e.position;
             Apply(e);
         }
 
@@ -44,10 +52,16 @@ namespace StickmanFight.UI
         public void OnPointerUp(PointerEventData e)
         {
             if (e.pointerId != _pointerId) return;
+            float held = Time.unscaledTime - _downTime;
+            float moved = Vector2.Distance(e.position, _downPos);
+            bool tap = held < 0.28f && moved < 34f;
+
             _active = false;
             _pointerId = -1;
             Value = Vector2.zero;
             if (knob != null) knob.anchoredPosition = Vector2.zero;
+
+            if (tap) OnTap?.Invoke();
         }
 
         private void Apply(PointerEventData e)
@@ -74,5 +88,18 @@ namespace StickmanFight.UI
         }
 
         public void SetVisible(bool on) => gameObject.SetActive(on);
+
+        /// <summary>Джойстик отведён вверх — прыжок (с защёлкой, чтобы не спамить).</summary>
+        public bool ConsumeUp()
+        {
+            if (Value.y > 0.62f)
+            {
+                if (_upLatch) return false;
+                _upLatch = true;
+                return true;
+            }
+            if (Value.y < 0.38f) _upLatch = false;
+            return false;
+        }
     }
 }

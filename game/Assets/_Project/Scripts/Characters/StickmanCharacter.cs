@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using StickmanFight.Art;
 using StickmanFight.Core;
+using StickmanFight.Weapons;
 
 namespace StickmanFight.Characters
 {
@@ -25,6 +26,9 @@ namespace StickmanFight.Characters
         public GroundCheck Ground { get; private set; }
         public RagdollVisual Visual { get; private set; }
         public Combat.CharacterCombat Combat { get; private set; }
+
+        [Tooltip("Оружие, выбранное в меню: выдаётся при старте боя")]
+        public Weapon startWeapon;
         public CharacterState State { get; private set; } = CharacterState.Standing;
         public float Hp { get; private set; }
         public bool IsDead => State == CharacterState.Dead;
@@ -51,6 +55,7 @@ namespace StickmanFight.Characters
         private float _deadTimer;
         private float _groundedGrace;
         private float _motorScale = 1f;
+        private float _walkPhase;
 
         /// <summary>«На земле» с гистерезисом: без него состояние мигает Airborne/Standing на стыках.</summary>
         public bool Grounded { get; private set; }
@@ -104,6 +109,8 @@ namespace StickmanFight.Characters
             if (Combat == null) Combat = gameObject.AddComponent<Combat.CharacterCombat>();
             Combat.character = this;
             Combat.handAnchor = hand.transform;
+
+            if (startWeapon != null) Combat.Equip(startWeapon);
         }
 
         // ------------------------------------------------------------------ цикл
@@ -151,6 +158,7 @@ namespace StickmanFight.Characters
             ApplyBalance(dt);
             ApplyMovement(dt);
             ApplyJump();
+            TickWalkPose(dt);
 
             if (_getUpTimer > 0f)
             {
@@ -243,6 +251,54 @@ namespace StickmanFight.Characters
             if (now) _groundedGrace = config.groundGrace;
             else _groundedGrace = Mathf.Max(0f, _groundedGrace - dt);
             Grounded = _groundedGrace > 0f;
+        }
+
+
+        /// <summary>
+        /// Процедурная ходьба: ноги и руки качаются в противофазе, колено сгибается на шаге.
+        /// Без этого персонаж «скользит» статичной позой — главная причина, что он казался болванчиком.
+        /// </summary>
+        private void TickWalkPose(float dt)
+        {
+            if (Rig == null) return;
+            if (Combat != null && Combat.IsAttacking) return; // во время удара рукой управляет атака
+            if (State == CharacterState.Knockdown || State == CharacterState.Dead) return;
+            if (!Rig.PoseHeld) return;
+
+            float speed = Mathf.Abs(Rig.Torso.linearVelocity.x);
+            bool walking = Grounded && speed > 0.35f;
+            float amp = 26f * Mathf.Clamp01(speed / Mathf.Max(1f, config.moveSpeed));
+
+            if (!walking)
+            {
+                // Стоим: плавно возвращаемся в боевую стойку.
+                _walkPhase = 0f;
+                if (!Grounded)
+                {
+                    // В воздухе — поджатые ноги.
+                    Rig.SetJointTarget(RagdollRig.JointHipL, 12f);
+                    Rig.SetJointTarget(RagdollRig.JointHipR, 12f);
+                    Rig.SetJointTarget(RagdollRig.JointKneeL, 34f);
+                    Rig.SetJointTarget(RagdollRig.JointKneeR, 34f);
+                }
+                else
+                {
+                    Rig.SetStance();
+                }
+                return;
+            }
+
+            _walkPhase += dt * (5.5f + speed * 1.1f);
+            float s = Mathf.Sin(_walkPhase);
+
+            Rig.SetJointTarget(RagdollRig.JointHipL, s * amp);
+            Rig.SetJointTarget(RagdollRig.JointHipR, -s * amp);
+
+            Rig.SetJointTarget(RagdollRig.JointKneeL, Mathf.Max(0f, -s) * amp * 1.7f + 7f);
+            Rig.SetJointTarget(RagdollRig.JointKneeR, Mathf.Max(0f, s) * amp * 1.7f + 7f);
+
+            Rig.SetJointTarget(RagdollRig.JointShoulderL, -s * amp * 0.9f - 22f);
+            Rig.SetJointTarget(RagdollRig.JointShoulderR, s * amp * 0.9f - 22f);
         }
 
         private void ApplyMovement(float dt)

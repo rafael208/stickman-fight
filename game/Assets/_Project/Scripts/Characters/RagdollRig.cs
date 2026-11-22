@@ -172,6 +172,8 @@ namespace StickmanFight.Characters
 
         private const float ServoSpeedLimit = 360f; // °/с
 
+        public bool PoseHeld => _poseHeld;
+
         public void SetPoseHeld(bool held)
         {
             _poseHeld = held;
@@ -191,8 +193,12 @@ namespace StickmanFight.Characters
 
         public void ResetJointTargets()
         {
-            // Боевая стойка, а не «смирно»: руки согнуты и вынесены вперёд, колени мягкие.
-            // Именно из-за нулевой позы персонажи выглядели деревянными болванчиками.
+            SetStance();
+        }
+
+        /// <summary>Боевая стойка: руки согнуты и вынесены вперёд, колени мягкие.</summary>
+        public void SetStance()
+        {
             SetJointTarget(JointShoulderL, -22f);
             SetJointTarget(JointShoulderR, -22f);
             SetJointTarget(JointElbowL, -42f);

@@ -17,6 +17,17 @@ namespace StickmanFight.Inputs
 
         private bool _jump;
         private bool _attack;
+
+        private void Awake()
+        {
+            if (joystick != null) joystick.OnTap += () => _attack = true;
+        }
+
+        private void Update()
+        {
+            // Отвёл джойстик вверх — прыжок.
+            if (joystick != null && joystick.ConsumeUp()) _jump = true;
+        }
         private bool _interact;
         private bool _drop;
 
