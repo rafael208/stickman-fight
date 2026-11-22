@@ -50,6 +50,8 @@ namespace StickmanFight.Core
         {
             _taps++;
             UpdateCounter();
+            // Логируем — так на устройстве видно, что нажатие реальное, а не автоклик.
+            if (_taps % 10 == 0) Debug.Log($"[Tap] {_taps}");
         }
 
         private void UpdateCounter()

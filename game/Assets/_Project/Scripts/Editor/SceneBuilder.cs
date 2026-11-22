@@ -120,6 +120,18 @@ namespace StickmanFight.EditorTools
 
             canvasGo.AddComponent<GraphicRaycaster>();
 
+            // Всё содержимое живёт внутри SafeRoot: он подгоняется под safe area (FR-UI-07).
+            var safeGo = new GameObject("SafeRoot", typeof(RectTransform));
+            safeGo.transform.SetParent(canvasGo.transform, false);
+            var safeRt = (RectTransform)safeGo.transform;
+            safeRt.anchorMin = Vector2.zero;
+            safeRt.anchorMax = Vector2.one;
+            safeRt.offsetMin = Vector2.zero;
+            safeRt.offsetMax = Vector2.zero;
+            safeGo.AddComponent<StickmanFight.UI.SafeAreaFitter>();
+
+            Transform uiRoot = safeGo.transform;
+
             var esGo = new GameObject("EventSystem");
             esGo.AddComponent<EventSystem>();
             esGo.AddComponent<StandaloneInputModule>();
@@ -128,21 +140,21 @@ namespace StickmanFight.EditorTools
             var hello = gameGo.AddComponent<HelloStickman>();
 
             // Заголовок
-            var title = MakeText(canvasGo.transform, "Title", "STICKMAN FIGHT", 96, Hex(Palette.Text));
+            var title = MakeText(uiRoot, "Title", "STICKMAN FIGHT", 96, Hex(Palette.Text));
             Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f));
             title.rectTransform.offsetMin = new Vector2(40f, -190f);
             title.rectTransform.offsetMax = new Vector2(-40f, -60f);
             title.alignment = TextAnchor.MiddleCenter;
             title.fontStyle = FontStyle.Bold;
 
-            var subtitle = MakeText(canvasGo.transform, "Subtitle", "сборка S0 · проверка пайплайна", 34, Hex(Palette.Accent));
+            var subtitle = MakeText(uiRoot, "Subtitle", "сборка S0 · проверка пайплайна", 34, Hex(Palette.Accent));
             Anchor(subtitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f));
             subtitle.rectTransform.offsetMin = new Vector2(40f, -250f);
             subtitle.rectTransform.offsetMax = new Vector2(-40f, -195f);
             subtitle.alignment = TextAnchor.MiddleCenter;
 
             // Инфо-панель справа
-            infoText = MakeText(canvasGo.transform, "Info", "…", 30, Hex(Palette.Text));
+            infoText = MakeText(uiRoot, "Info", "…", 30, Hex(Palette.Text));
             Anchor(infoText.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f));
             infoText.rectTransform.pivot = new Vector2(1f, 1f);
             infoText.rectTransform.sizeDelta = new Vector2(360f, 200f);
@@ -151,7 +163,7 @@ namespace StickmanFight.EditorTools
             infoText.lineSpacing = 1.15f;
 
             // Счётчик нажатий
-            counterText = MakeText(canvasGo.transform, "Counter", "НАЖАТИЙ: 0", 48, Hex(Palette.Accent));
+            counterText = MakeText(uiRoot, "Counter", "НАЖАТИЙ: 0", 48, Hex(Palette.Accent));
             Anchor(counterText.rectTransform, new Vector2(0f, 0f), new Vector2(0.6f, 0f));
             counterText.rectTransform.pivot = new Vector2(0f, 0f);
             counterText.rectTransform.sizeDelta = new Vector2(700f, 70f);
@@ -160,11 +172,11 @@ namespace StickmanFight.EditorTools
             counterText.fontStyle = FontStyle.Bold;
 
             // Кнопка
-            var button = MakeButton(canvasGo.transform, "TapButton", "НАЖМИ МЕНЯ", new Vector2(520f, 170f), new Vector2(-56f, 56f));
+            var button = MakeButton(uiRoot, "TapButton", "НАЖМИ МЕНЯ", new Vector2(520f, 170f), new Vector2(-56f, 56f));
             UnityEventTools.AddVoidPersistentListener(button.onClick, hello.OnTap);
 
             // Тач-индикатор
-            touchText = MakeText(canvasGo.transform, "Touch", "TOUCH: 0", 26, Hex(Palette.Dummy));
+            touchText = MakeText(uiRoot, "Touch", "TOUCH: 0", 26, Hex(Palette.Dummy));
             Anchor(touchText.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f));
             touchText.rectTransform.pivot = new Vector2(0f, 0f);
             touchText.rectTransform.sizeDelta = new Vector2(400f, 40f);
