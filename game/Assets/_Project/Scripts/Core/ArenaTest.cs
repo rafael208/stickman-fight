@@ -36,8 +36,21 @@ namespace StickmanFight.Core
         {
             if (_router != null) _router.enabled = false;
 
+            // Диагностика первых секунд: понять, падает ли персонаж до/после GO.
+            float probeStart = Time.realtimeSinceStartup;
+            while (Time.realtimeSinceStartup - probeStart < 4f)
+            {
+                if (player != null && player.Rig != null)
+                    Debug.Log($"[Probe] t={Time.realtimeSinceStartup - probeStart:0.00} " +
+                              $"torsoY={player.Rig.Torso.position.y:0.00} grounded={player.Ground.IsGrounded} " +
+                              $"timeScale={Time.timeScale:0.0} state={player.State}");
+                yield return new WaitForSecondsRealtime(0.5f);
+            }
+
             yield return new WaitForSeconds(1.5f);
             _elapsed = 0f;
+
+            yield return Approach();
 
             yield return SwordTest();
             yield return new WaitForSeconds(0.6f);
@@ -59,6 +72,29 @@ namespace StickmanFight.Core
         }
 
         // ------------------------------------------------------------------ тесты
+
+        /// <summary>Подойти к противнику на дистанцию удара — заодно проверяет движение.</summary>
+        private IEnumerator Approach(float targetDistance = 1.0f)
+        {
+            if (player == null || enemy == null) yield break;
+
+            float t = 0f;
+            while (t < 2.5f)
+            {
+                float dx = enemy.Rig.Torso.position.x - player.Rig.Torso.position.x;
+                if (Mathf.Abs(dx) <= targetDistance) break;
+
+                player.MoveX = Mathf.Sign(dx);
+                t += Time.deltaTime;
+                yield return null;
+            }
+
+            player.MoveX = 0f;
+            yield return new WaitForSeconds(0.3f);
+
+            float finalDx = Mathf.Abs(enemy.Rig.Torso.position.x - player.Rig.Torso.position.x);
+            Debug.Log($"[Approach] дистанция={finalDx:0.00} м за {t:0.0} с");
+        }
 
         private IEnumerator SwordTest()
         {
@@ -137,12 +173,12 @@ namespace StickmanFight.Core
             float startTime = Time.time;
 
             player.MoveX = -1f;
-            while (Time.time - startTime < 2f) yield return null;
+            while (Time.time - startTime < 1.2f) yield return null;
             player.MoveX = 0f;
 
             float moved = startX - player.Rig.Torso.position.x;
-            bool pass = moved >= 6.5f;
-            Debug.Log($"[MoveTest] {(pass ? "PASS" : "FAIL")} прошёл={moved:0.0} м за 2 с (ожидание ≥6.5)");
+            bool pass = moved >= 3.8f && !player.IsDead;
+            Debug.Log($"[MoveTest] {(pass ? "PASS" : "FAIL")} прошёл={moved:0.0} м за 1.2 с (ожидание ≥3.8) жив={!player.IsDead}");
         }
 
         private IEnumerator JumpTest()

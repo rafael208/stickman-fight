@@ -4,21 +4,31 @@ using StickmanFight.Characters;
 namespace StickmanFight.Art
 {
     /// <summary>
-    /// Рисует стикмена по физическим телам ragdoll (ADR-2: только линии, без спрайтов).
-    /// Позиции берутся из тел в LateUpdate — визуал не влияет на физику.
+    /// Рисует стикмена по физическим телам ragdoll: белая обводка + цветной силуэт,
+    /// как в трейлере (ADR-2: только линии, без спрайтов).
+    /// Каждый сегмент — пара LineRenderer (обводка сзади, цвет сверху).
     /// </summary>
     [DefaultExecutionOrder(100)]
     public class RagdollVisual : MonoBehaviour
     {
-        [SerializeField] private float lineWidth = 0.085f;
+        [SerializeField] private float lineWidth = 0.15f;
         [SerializeField] private Color color = Color.cyan;
+        [SerializeField] private Color outlineColor = Color.white;
         [SerializeField] private int sortingOrder = 10;
 
         private RagdollRig _rig;
-        private LineRenderer _torso, _head, _armL, _armR, _legL, _legR;
-        private Material _material;
+        private Segment _torso, _head, _armL, _armR, _legL, _legR;
+        private Material _fillMaterial;
+        private Material _outlineMaterial;
         private float _headRadius = 0.16f;
-        private const int HeadSegments = 14;
+        private const int HeadSegments = 16;
+
+        private sealed class Segment
+        {
+            public LineRenderer Fill;
+            public LineRenderer Outline;
+            public int Points;
+        }
 
         public void Init(RagdollRig rig, Color tint, float width = -1f)
         {
@@ -32,36 +42,54 @@ namespace StickmanFight.Art
         {
             color = tint;
             if (_torso == null) return;
-            foreach (var lr in All()) lr.startColor = lr.endColor = color;
+            foreach (var s in All()) s.Fill.startColor = s.Fill.endColor = color;
         }
 
         private void Build()
         {
             if (_torso != null) return;
 
-            _material = new Material(Shader.Find("Sprites/Default")) { name = "RagdollLine" };
-            _torso = MakeLine("TorsoLine", 2);
-            _armL = MakeLine("ArmLLine", 2);
-            _armR = MakeLine("ArmRLine", 2);
-            _legL = MakeLine("LegLLine", 2);
-            _legR = MakeLine("LegRLine", 2);
-            _head = MakeLine("HeadLine", HeadSegments + 1);
+            _fillMaterial = new Material(Shader.Find("Sprites/Default")) { name = "RagdollFill" };
+            _outlineMaterial = new Material(Shader.Find("Sprites/Default")) { name = "RagdollOutline" };
+
+            _torso = MakeSegment("Torso", 2);
+            _armL = MakeSegment("ArmL", 2);
+            _armR = MakeSegment("ArmR", 2);
+            _legL = MakeSegment("LegL", 2);
+            _legR = MakeSegment("LegR", 2);
+            _head = MakeSegment("Head", HeadSegments + 1);
         }
 
-        private LineRenderer MakeLine(string lineName, int points)
+        private Segment MakeSegment(string name, int points)
         {
-            var go = new GameObject(lineName);
-            go.transform.SetParent(transform, false);
-            var lr = go.AddComponent<LineRenderer>();
-            lr.material = _material;
-            lr.useWorldSpace = true;
-            lr.widthMultiplier = lineWidth;
-            lr.numCapVertices = 3;
-            lr.numCornerVertices = 2;
-            lr.startColor = lr.endColor = color;
-            lr.sortingOrder = sortingOrder;
-            lr.positionCount = points;
-            return lr;
+            var root = new GameObject(name + "Line");
+            root.transform.SetParent(transform, false);
+
+            var outlineGo = new GameObject("Outline");
+            outlineGo.transform.SetParent(root.transform, false);
+            var outline = outlineGo.AddComponent<LineRenderer>();
+            outline.material = _outlineMaterial;
+            outline.useWorldSpace = true;
+            outline.widthMultiplier = lineWidth * 1.9f;
+            outline.numCapVertices = 4;
+            outline.numCornerVertices = 3;
+            outline.startColor = outline.endColor = outlineColor;
+            outline.sortingOrder = sortingOrder - 1;
+            outline.positionCount = points;
+
+            var fillGo = new GameObject("Fill");
+            fillGo.transform.SetParent(root.transform, false);
+            var fill = fillGo.AddComponent<LineRenderer>();
+            fill.material = _fillMaterial;
+            fill.useWorldSpace = true;
+            fill.widthMultiplier = lineWidth;
+            fill.numCapVertices = 4;
+            fill.numCornerVertices = 3;
+            fill.startColor = fill.endColor = color;
+            fill.sortingOrder = sortingOrder;
+            fill.positionCount = points;
+
+            return new Segment { Fill = fill, Outline = outline, Points = points };
         }
 
         private void LateUpdate()
@@ -72,7 +100,6 @@ namespace StickmanFight.Art
 
             var torso = _rig.Torso;
 
-            // Корпус: от бёдер к шее вдоль оси тела (длина берётся из капсулы)
             Vector2 up = torso.transform.up;
             Vector2 center = torso.position;
             var capsule = torso.GetComponent<CapsuleCollider2D>();
@@ -86,39 +113,46 @@ namespace StickmanFight.Art
                 DrawCircle(_head, _rig.Head.position, _headRadius);
             }
 
-            SetLimb(_armL, _rig.ArmL);
-            SetLimb(_armR, _rig.ArmR);
-            SetLimb(_legL, _rig.LegL);
-            SetLimb(_legR, _rig.LegR);
+            DrawLimb(_armL, _rig.ArmL);
+            DrawLimb(_armR, _rig.ArmR);
+            DrawLimb(_legL, _rig.LegL);
+            DrawLimb(_legR, _rig.LegR);
         }
 
-        private static void SetLimb(LineRenderer lr, Rigidbody2D body)
+        private static void DrawLimb(Segment segment, Rigidbody2D body)
         {
-            if (body == null || lr == null) return;
+            if (body == null || segment == null) return;
+
             var box = body.GetComponent<BoxCollider2D>();
             float half = box != null ? box.size.y * 0.5f : 0.25f;
             Vector2 dir = body.transform.up;
             Vector2 center = body.position;
-            lr.SetPosition(0, center - dir * half);
-            lr.SetPosition(1, center + dir * half);
+
+            SetSegment(segment, center - dir * half, center + dir * half);
         }
 
-        private static void SetSegment(LineRenderer lr, Vector2 from, Vector2 to)
+        private static void SetSegment(Segment s, Vector2 from, Vector2 to)
         {
-            lr.SetPosition(0, from);
-            lr.SetPosition(1, to);
+            s.Fill.SetPosition(0, from);
+            s.Fill.SetPosition(1, to);
+            s.Outline.SetPosition(0, from);
+            s.Outline.SetPosition(1, to);
         }
 
-        private void DrawCircle(LineRenderer lr, Vector2 center, float radius)
+        private void DrawCircle(Segment s, Vector2 center, float radius)
         {
-            if (lr == null) return;
+            if (s == null) return;
+
             for (int i = 0; i <= HeadSegments; i++)
             {
                 float a = i / (float)HeadSegments * Mathf.PI * 2f;
-                lr.SetPosition(i, center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius);
+                var p = center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * radius;
+
+                s.Fill.SetPosition(i, p);
+                s.Outline.SetPosition(i, p);
             }
         }
 
-        private LineRenderer[] All() => new[] { _torso, _head, _armL, _armR, _legL, _legR };
+        private Segment[] All() => new[] { _torso, _head, _armL, _armR, _legL, _legR };
     }
 }

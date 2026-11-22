@@ -6,7 +6,7 @@ namespace StickmanFight
     public static class BuildInfo
     {
         public const string Version = "0.1.0";
-        public const int BuildNumber = 10;
+        public const int BuildNumber = 15;
         public const string ProductName = "Stickman Fight";
         public const string CompanyName = "StickmanFight";
         public const string ApplicationId = "com.stickmanfight.game";
@@ -37,21 +37,41 @@ namespace StickmanFight
         };
     }
 
-    /// <summary>Палитра из ТЗ, раздел 10.2.</summary>
+    /// <summary>Палитра, снятая с кадров трейлера (см. DEVLOG, арт-этап).</summary>
     public static class Palette
     {
-        public const string BackgroundArena = "#10131A";
-        public const string BackgroundSandbox = "#141A14";
-        public const string Ground = "#2A3140";
-        public const string Player = "#4FC3F7";
-        public const string Enemy = "#EF5350";
+        // Фон и сцена
+        public const string SkyTop = "#8F8FE8";
+        public const string SkyBottom = "#CFD3F2";
+        public const string Cloud = "#E8F1FB";
+        public const string Hill = "#5A8CD8";
+        public const string HillTop = "#7FA9E8";
+        public const string Water = "#2E9BC4";
+        public const string WaterCrest = "#FFFFFF";
+        public const string Brick = "#C9CDD4";
+        public const string BrickMortar = "#8E9299";
+        public const string Plank = "#B03A2E";
+        public const string PlankLight = "#D1483A";
+        public const string Grass = "#3FA34D";
+        public const string Outline = "#FFFFFF";
+
+        // Бойцы и предметы
+        public const string Player = "#37C8E0";
+        public const string Enemy = "#F2E14C";
         public const string Dummy = "#9E9E9E";
         public const string Weapon = "#E0E0E0";
         public const string Crate = "#C08A4A";
         public const string Metal = "#9AA5B1";
         public const string Ball = "#FFD54F";
+
+        // Интерфейс
         public const string Accent = "#FFB300";
-        public const string Text = "#ECEFF1";
-        public const string Danger = "#FF5252";
+        public const string Text = "#FFFFFF";
+        public const string Danger = "#E23B3B";
+
+        // Совместимость со старыми именами
+        public const string BackgroundArena = SkyTop;
+        public const string BackgroundSandbox = Grass;
+        public const string Ground = BrickMortar;
     }
 }

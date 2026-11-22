@@ -1,58 +1,110 @@
+using StickmanFight.Characters;
 using UnityEngine;
 
 namespace StickmanFight.Core
 {
     /// <summary>
-    /// Камера-следопыт со сглаживанием и ограничением по границам уровня (FR-LEVEL-01).
-    /// Работает в LateUpdate, чтобы не отставать от интерполированной физики.
+    /// Общая камера на всех бойцов: центр — середина между ними, зум растёт с расстоянием.
+    /// Обязательное требование для локального мультиплеера: никто не должен уезжать за экран.
     /// </summary>
     public class CameraFollow : MonoBehaviour
     {
+        [Header("Цели")]
+        public StickmanCharacter[] targets;
+        public StickmanCharacter characterTarget;
         public Transform target;
-        [Tooltip("Следить за корпусом персонажа: корневой объект не двигается, двигается только ragdoll")]
-        public StickmanFight.Characters.StickmanCharacter characterTarget;
-        [Tooltip("Смещение относительно цели, м")]
-        public Vector2 offset = new Vector2(0f, 1.1f);
-        [Tooltip("Скорость сглаживания, 1/с")]
+
+        [Header("Кадрирование")]
+        public Vector2 offset = new Vector2(0f, 1.2f);
+        public float baseSize = 4.6f;
+        public float sizePerMeter = 0.42f;
+        public float minSize = 4.2f;
+        public float maxSize = 7.5f;
         public float smoothing = 6f;
         [Tooltip("Границы, в которых может находиться центр камеры")]
-        public Vector2 min = new Vector2(-10f, 2f);
-        public Vector2 max = new Vector2(10f, 4f);
+        public Vector2 min = new Vector2(-9.5f, 2f);
+        public Vector2 max = new Vector2(9.5f, 4f);
 
-        private void Start()
+        private Camera _camera;
+
+        private void Awake()
         {
-            ResolveTarget();
+            _camera = GetComponent<Camera>();
+            ResolveTargets();
         }
 
-        private void ResolveTarget()
+        private void ResolveTargets()
         {
-            if (characterTarget != null && characterTarget.Rig != null)
+            if (targets == null || targets.Length == 0)
+            {
+                if (characterTarget != null) targets = new[] { characterTarget };
+            }
+
+            if (target == null && characterTarget != null && characterTarget.Rig != null)
                 target = characterTarget.Rig.Torso.transform;
         }
 
         private void LateUpdate()
         {
-            if (target == null) ResolveTarget();
-            if (target == null) return;
+            ResolveTargets();
 
-            Vector3 desired = new Vector3(
-                Mathf.Clamp(target.position.x + offset.x, min.x, max.x),
-                Mathf.Clamp(target.position.y + offset.y, min.y, max.y),
-                -10f);
+            Vector2 center;
+            float spread;
+
+            if (!TryGetGroupFrame(out center, out spread))
+            {
+                if (target == null) return;
+                center = target.position;
+                spread = 0f;
+            }
+
+            float desiredSize = Mathf.Clamp(baseSize + spread * sizePerMeter, minSize, maxSize);
 
             float k = 1f - Mathf.Exp(-smoothing * Time.unscaledDeltaTime);
+            if (_camera != null && _camera.orthographic)
+                _camera.orthographicSize = Mathf.Lerp(_camera.orthographicSize, desiredSize, k);
+
+            var desired = new Vector3(
+                Mathf.Clamp(center.x + offset.x, min.x, max.x),
+                Mathf.Clamp(center.y + offset.y, min.y, max.y),
+                -10f);
+
             transform.position = Vector3.Lerp(transform.position, desired, k);
         }
 
-        public void SnapToTarget()
+        /// <summary>Центр и разброс живой группы бойцов. Мёртвых не учитываем, чтобы камера не прыгала.</summary>
+        private bool TryGetGroupFrame(out Vector2 center, out float spread)
         {
-            if (target == null) ResolveTarget();
-            if (target == null) return;
+            center = Vector2.zero;
+            spread = 0f;
+            if (targets == null || targets.Length == 0) return false;
 
-            transform.position = new Vector3(
-                Mathf.Clamp(target.position.x + offset.x, min.x, max.x),
-                Mathf.Clamp(target.position.y + offset.y, min.y, max.y),
-                -10f);
+            int count = 0;
+            float minX = float.MaxValue, maxX = float.MinValue;
+            float minY = float.MaxValue, maxY = float.MinValue;
+            Vector2 sum = Vector2.zero;
+
+            foreach (var c in targets)
+            {
+                if (c == null || c.Rig == null || c.Rig.Torso == null) continue;
+                if (c.IsDead) continue;
+
+                var p = c.Rig.Torso.position;
+                sum += p;
+                count++;
+                minX = Mathf.Min(minX, p.x);
+                maxX = Mathf.Max(maxX, p.x);
+                minY = Mathf.Min(minY, p.y);
+                maxY = Mathf.Max(maxY, p.y);
+            }
+
+            if (count == 0) return false;
+
+            center = sum / count;
+            float spanX = maxX - minX;
+            float spanY = maxY - minY;
+            spread = Mathf.Max(spanX, spanY * 1.4f);
+            return true;
         }
     }
 }

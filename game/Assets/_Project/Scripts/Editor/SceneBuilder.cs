@@ -10,6 +10,7 @@ using StickmanFight.Art;
 using StickmanFight.Characters;
 using StickmanFight.Core;
 using StickmanFight.Inputs;
+using StickmanFight.Levels;
 using StickmanFight.UI;
 using StickmanFight.Weapons;
 
@@ -48,8 +49,8 @@ namespace StickmanFight.EditorTools
         // ---------------------------------------------------------- Arena (S2/S3)
 
         /// <summary>
-        /// Арена: земля, стены, игрок, манекен, три оружия, HUD и сенсорное управление.
-        /// Собирается кодом (ADR-3), автопрогон G2/G3 — компонентом ArenaTest.
+        /// Арена «Мост над водой» в стиле трейлера: балка над водой, кирпичные площадки по краям,
+        /// вода как смертельная зона, общая камера на двух бойцов, отсчёт GO! и пауза.
         /// </summary>
         private static string BuildArena()
         {
@@ -60,34 +61,58 @@ namespace StickmanFight.EditorTools
             camGo.tag = "MainCamera";
             var cam = camGo.AddComponent<Camera>();
             cam.orthographic = true;
-            cam.orthographicSize = 5f;
+            cam.orthographicSize = 4.2f;
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = Hex(Palette.BackgroundArena);
-            camGo.transform.position = new Vector3(0f, 2.4f, -10f);
+            cam.backgroundColor = Hex(Palette.SkyBottom);
+            camGo.transform.position = new Vector3(0f, 1.6f, -10f);
             camGo.AddComponent<AudioListener>();
 
             var follow = camGo.AddComponent<CameraFollow>();
-            follow.offset = new Vector2(0f, 1.5f);
-            follow.min = new Vector2(-9.5f, 1.8f);
-            follow.max = new Vector2(9.5f, 3.2f);
+            follow.offset = new Vector2(0f, 1.1f);
+            follow.baseSize = 4.2f;
+            follow.minSize = 3.8f;
+            follow.maxSize = 6.6f;
+            follow.min = new Vector2(-9.5f, 0.9f);
+            follow.max = new Vector2(9.5f, 2.0f);
 
-            // --- уровень: пол 25 м, стены по краям ---
-            CreateStrip("Ground", new Vector2(-12.5f, 0f), new Vector2(12.5f, 0f), 0.14f, Palette.Ground,
-                new Vector2(0f, -0.15f), new Vector2(25f, 0.3f));
-            CreateStrip("WallLeft", new Vector2(-12.2f, 0f), new Vector2(-12.2f, 9f), 0.18f, Palette.Ground,
-                new Vector2(-12.2f, 4.5f), new Vector2(0.4f, 9f));
-            CreateStrip("WallRight", new Vector2(12.2f, 0f), new Vector2(12.2f, 9f), 0.18f, Palette.Ground,
-                new Vector2(12.2f, 4.5f), new Vector2(0.4f, 9f));
+            // --- фон: небо, облака, холмы, вода ---
+            var backdropGo = new GameObject("Backdrop");
+            var backdrop = backdropGo.AddComponent<ArenaBackdrop>();
+            backdrop.cam = cam;
+            backdrop.waterLevel = -2.6f;
+            backdrop.levelBounds = new Vector2(-14f, 14f);
+            backdrop.skyTop = Hex(Palette.SkyTop);
+            backdrop.skyBottom = Hex(Palette.SkyBottom);
+            backdrop.cloudColor = Hex(Palette.Cloud);
+            backdrop.waterColor = Hex(Palette.Water);
+            backdrop.crestColor = Hex(Palette.WaterCrest);
+            backdrop.hillColor = Hex(Palette.Hill);
+            backdrop.hillTop = Hex(Palette.HillTop);
 
-            // --- персонажи ---
-            var player = CreateCharacter("Player", new Vector3(-0.7f, 0.05f), GameLayers.PlayerBody, Palette.Player);
-            var enemy = CreateCharacter("Enemy", new Vector3(0.5f, 0.05f), GameLayers.EnemyBody, Palette.Enemy);
-            follow.characterTarget = player;
+            // --- геометрия уровня ---
+            CreatePlatform("Bridge", new Vector2(0f, 0f), new Vector2(14f, 0.5f), PlatformVisual.Kind.Plank);
+            CreatePlatform("PlatformLeft", new Vector2(-8.6f, 1.7f), new Vector2(3.4f, 0.55f), PlatformVisual.Kind.Brick);
+            CreatePlatform("PlatformRight", new Vector2(8.6f, 1.7f), new Vector2(3.4f, 0.55f), PlatformVisual.Kind.Brick);
+            CreatePlatform("PostLeft", new Vector2(-6.9f, -1.1f), new Vector2(0.34f, 3.0f), PlatformVisual.Kind.Post, solid: false);
+            CreatePlatform("PostRight", new Vector2(6.9f, -1.1f), new Vector2(0.34f, 3.0f), PlatformVisual.Kind.Post, solid: false);
 
-            // --- оружие на земле ---
-            var sword = CreateWeapon("Weapon_Sword", WeaponKind.Sword, new Vector3(-2.4f, 0.5f));
-            var hammer = CreateWeapon("Weapon_Hammer", WeaponKind.Hammer, new Vector3(-3.4f, 0.5f));
-            var pistol = CreateWeapon("Weapon_Pistol", WeaponKind.Pistol, new Vector3(-4.4f, 0.5f));
+            // --- вода убивает ---
+            var hazardGo = new GameObject("WaterHazard");
+            var hazard = hazardGo.AddComponent<WaterHazard>();
+            hazard.lethalY = -3.4f;
+
+            // --- бойцы ---
+            var player = CreateCharacter("Player", new Vector3(-1.1f, 0.35f), GameLayers.PlayerBody, Palette.Player);
+            var enemy = CreateCharacter("Enemy", new Vector3(1.1f, 0.35f), GameLayers.EnemyBody, Palette.Enemy);
+            follow.targets = new[] { player, enemy };
+
+            AddHealthBar(player);
+            AddHealthBar(enemy);
+
+            // --- оружие на балке ---
+            var sword = CreateWeapon("Weapon_Sword", WeaponKind.Sword, new Vector3(-2.8f, 0.7f));
+            var hammer = CreateWeapon("Weapon_Hammer", WeaponKind.Hammer, new Vector3(-4.6f, 0.7f));
+            var pistol = CreateWeapon("Weapon_Pistol", WeaponKind.Pistol, new Vector3(3.2f, 0.7f));
 
             // --- UI ---
             var canvasGo = new GameObject("UI");
@@ -116,27 +141,72 @@ namespace StickmanFight.EditorTools
             esGo.AddComponent<EventSystem>();
             esGo.AddComponent<StandaloneInputModule>();
 
-            // HUD
+            // HUD: оружие и патроны (полосы HP теперь над головами)
             var hudGo = new GameObject("HUD");
             var hud = hudGo.AddComponent<BattleHUD>();
             hud.player = player;
             hud.enemy = enemy;
-            hud.playerFill = MakeBar(uiRoot, "PlayerHp", new Vector2(520f, 26f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(48f, -44f), Hex(Palette.Player));
-            hud.enemyFill = MakeBar(uiRoot, "EnemyHp", new Vector2(520f, 26f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-48f, -44f), Hex(Palette.Enemy));
 
             hud.weaponText = MakeText(uiRoot, "Weapon", "без оружия", 34, Hex(Palette.Text));
             Anchor(hud.weaponText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f));
             hud.weaponText.rectTransform.pivot = new Vector2(0.5f, 1f);
             hud.weaponText.rectTransform.sizeDelta = new Vector2(600f, 44f);
-            hud.weaponText.rectTransform.anchoredPosition = new Vector2(0f, -44f);
+            hud.weaponText.rectTransform.anchoredPosition = new Vector2(0f, -30f);
             hud.weaponText.alignment = TextAnchor.UpperCenter;
 
-            hud.ammoText = MakeText(uiRoot, "Ammo", "", 28, Hex(Palette.Accent));
+            hud.ammoText = MakeText(uiRoot, "Ammo", "", 28, Hex(Palette.Text));
             Anchor(hud.ammoText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f));
             hud.ammoText.rectTransform.pivot = new Vector2(0.5f, 1f);
             hud.ammoText.rectTransform.sizeDelta = new Vector2(600f, 36f);
-            hud.ammoText.rectTransform.anchoredPosition = new Vector2(0f, -90f);
+            hud.ammoText.rectTransform.anchoredPosition = new Vector2(0f, -74f);
             hud.ammoText.alignment = TextAnchor.UpperCenter;
+
+            // Отсчёт GO!
+            var splashText = MakeText(uiRoot, "Splash", "3", 200, Hex(Palette.Text));
+            splashText.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            splashText.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            splashText.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            splashText.rectTransform.sizeDelta = new Vector2(900f, 320f);
+            splashText.rectTransform.anchoredPosition = Vector2.zero;
+            splashText.alignment = TextAnchor.MiddleCenter;
+            splashText.fontStyle = FontStyle.Bold;
+
+            var splash = canvasGo.AddComponent<GoSplash>();
+            splash.label = splashText;
+            splash.freezeGameplay = true;
+
+            // Пауза: кнопка слева сверху + панель
+            var pauseBtn = MakeTapButton(uiRoot, "BtnPause", "II", new Vector2(96f, 96f),
+                new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(40f, -40f), Hex("#2F5578"), 44);
+
+            var pausePanel = new GameObject("PausePanel", typeof(RectTransform));
+            pausePanel.transform.SetParent(uiRoot, false);
+            var panelRt = (RectTransform)pausePanel.transform;
+            panelRt.anchorMin = Vector2.zero;
+            panelRt.anchorMax = Vector2.one;
+            panelRt.offsetMin = panelRt.offsetMax = Vector2.zero;
+            var panelImage = pausePanel.AddComponent<Image>();
+            panelImage.color = new Color(0f, 0f, 0f, 0.55f);
+
+            var pauseTitle = MakeText(pausePanel.transform, "PauseTitle", "ПАУЗА", 110, Hex(Palette.Text));
+            pauseTitle.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            pauseTitle.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            pauseTitle.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            pauseTitle.rectTransform.sizeDelta = new Vector2(800f, 160f);
+            pauseTitle.rectTransform.anchoredPosition = new Vector2(0f, 140f);
+            pauseTitle.alignment = TextAnchor.MiddleCenter;
+
+            var resumeBtn = MakeTapButton(pausePanel.transform, "BtnResume", "ПРОДОЛЖИТЬ", new Vector2(420f, 110f),
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 0f), Hex("#3E6B4A"), 40);
+            var restartBtn = MakeTapButton(pausePanel.transform, "BtnRestart", "ЗАНОВО", new Vector2(420f, 110f),
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -140f), Hex("#6B3E3E"), 40);
+
+            var pause = canvasGo.AddComponent<PauseOverlay>();
+            pause.panel = pausePanel;
+            pause.pauseButton = pauseBtn;
+            UnityEventTools.AddVoidPersistentListener(pauseBtn.onClick, pause.Toggle);
+            UnityEventTools.AddVoidPersistentListener(resumeBtn.onClick, pause.OnResumeClicked);
+            UnityEventTools.AddVoidPersistentListener(restartBtn.onClick, pause.OnRestartClicked);
 
             // Управление
             var touchGo = new GameObject("TouchInput");
@@ -159,8 +229,6 @@ namespace StickmanFight.EditorTools
             var drop = MakeTapButton(uiRoot, "BtnDrop", "БРОС", new Vector2(130f, 120f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(90f, 44f), Hex("#6B3E3E"), 28);
             UnityEventTools.AddVoidPersistentListener(drop.onClick, touch.OnDrop);
 
-            var reset = MakeTapButton(uiRoot, "BtnReset", "СБРОС", new Vector2(150f, 90f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(48f, -92f), Hex("#444B57"), 26);
-
             var router = player.gameObject.AddComponent<InputRouter>();
             router.target = player;
             router.source = touch;
@@ -174,12 +242,34 @@ namespace StickmanFight.EditorTools
             test.hammer = hammer;
             test.pistol = pistol;
 
-            // Слушатель должен указывать на метод компонента, лямбда не сериализуется.
-            UnityEventTools.AddVoidPersistentListener(reset.onClick, test.ResetScene);
-
             string path = $"{ScenesDir}/20_Battle_Arena.unity";
             EditorSceneManager.SaveScene(scene, path);
             return path;
+        }
+
+        /// <summary>Платформа: коллайдер для физики + визуал, который строится в рантайме.</summary>
+        private static void CreatePlatform(string name, Vector2 center, Vector2 size, PlatformVisual.Kind kind, bool solid = true)
+        {
+            var go = new GameObject(name);
+            go.transform.position = center;
+
+            if (solid)
+            {
+                go.layer = GameLayers.Ground;
+                var col = go.AddComponent<BoxCollider2D>();
+                col.size = size;
+            }
+
+            var visual = go.AddComponent<PlatformVisual>();
+            visual.kind = kind;
+            visual.size = size;
+        }
+
+        private static void AddHealthBar(StickmanCharacter character)
+        {
+            var bar = character.gameObject.AddComponent<HealthBarAbove>();
+            bar.character = character;
+            bar.offset = new Vector3(0f, 0.45f, 0f);
         }
 
         private static void CreateStrip(string name, Vector2 from, Vector2 to, float width, string colorHex,
