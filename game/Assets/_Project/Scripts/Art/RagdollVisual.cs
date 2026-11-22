@@ -17,9 +17,9 @@ namespace StickmanFight.Art
         [SerializeField] private Color color = Color.cyan;
         [SerializeField] private int sortingOrder = 10;
         [Tooltip("Толщина белой обводки, м")]
-        [SerializeField] private float outlineMargin = 0.017f;
+        [SerializeField] private float outlineMargin = 0.07f;
         [Tooltip("Перекрытие частей на стыках, чтобы не было щелей")]
-        [SerializeField] private float overlap = 1.04f;
+        [SerializeField] private float overlap = 1.0f;
         [Tooltip("Тоньше коллайдера — для тонкого силуэта стикмена")]
         [SerializeField] private float visualThinness = 0.72f;
 

@@ -19,6 +19,7 @@ namespace StickmanFight.UI
 
         private SpriteRenderer _back;
         private SpriteRenderer _fill;
+        private TextMesh _hpText;
         private Transform _barRoot;
         private Transform _anchor;
         private float _maxHp = 100f;
@@ -41,6 +42,19 @@ namespace StickmanFight.UI
 
             _back = MakeBar("BarBack", backColor, -1);
             _fill = MakeBar("BarFill", fillColor, 0);
+
+            // Цифры здоровья как в оригинале: «100» рядом со шкалой.
+            var textGo = new GameObject("HpText");
+            textGo.transform.SetParent(_barRoot, false);
+            _hpText = textGo.AddComponent<TextMesh>();
+            _hpText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _hpText.fontSize = 72;
+            _hpText.characterSize = 0.030f;
+            _hpText.anchor = TextAnchor.MiddleCenter;
+            _hpText.alignment = TextAlignment.Center;
+            _hpText.color = Color.white;
+            var mr = textGo.GetComponent<MeshRenderer>();
+            if (mr != null) mr.sortingOrder = 50;
         }
 
         private SpriteRenderer MakeBar(string barName, Color color, int order)
@@ -62,6 +76,7 @@ namespace StickmanFight.UI
             bool hide = character.IsDead || character.Rig == null || character.Rig.Head == null;
             _back.enabled = !hide;
             _fill.enabled = !hide;
+            if (_hpText != null) _hpText.gameObject.SetActive(!hide);
             if (hide) return;
 
             Vector3 head = character.Rig.Head.position;
@@ -74,6 +89,12 @@ namespace StickmanFight.UI
             _fill.transform.localScale = new Vector3(width * ratio, height * 0.72f, 1f);
             // Заливка растёт слева направо: сдвигаем её центр к левому краю.
             _fill.transform.localPosition = new Vector3(-width * 0.5f + width * ratio * 0.5f, 0f, -0.01f);
+
+            if (_hpText != null)
+            {
+                _hpText.text = Mathf.CeilToInt(character.Hp).ToString();
+                _hpText.transform.localPosition = new Vector3(0f, height * 0.5f + 0.07f, -0.01f);
+            }
         }
     }
 }

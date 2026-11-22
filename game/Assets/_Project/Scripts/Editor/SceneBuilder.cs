@@ -69,7 +69,7 @@ namespace StickmanFight.EditorTools
             var backdrop = backdropGo.AddComponent<ArenaBackdrop>();
             backdrop.cam = cam;
             backdrop.waterLevel = -3.2f;
-            backdrop.levelBounds = new Vector2(-14f, 14f);
+            backdrop.levelBounds = new Vector2(-18f, 18f);
             backdrop.skyTop = Hex(Palette.SkyTop);
             backdrop.skyBottom = Hex(Palette.SkyBottom);
             backdrop.cloudColor = Hex(Palette.Cloud);
@@ -168,27 +168,27 @@ namespace StickmanFight.EditorTools
             camGo.tag = "MainCamera";
             var cam = camGo.AddComponent<Camera>();
             cam.orthographic = true;
-            cam.orthographicSize = 2.9f;
+            cam.orthographicSize = 5.4f;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = Hex(Palette.SkyBottom);
             camGo.transform.position = new Vector3(0f, 1.2f, -10f);
             camGo.AddComponent<AudioListener>();
 
             var follow = camGo.AddComponent<CameraFollow>();
-            follow.offset = new Vector2(0f, 0.55f);
-            follow.baseSize = 2.9f;
+            follow.offset = new Vector2(0f, 1.0f);
+            follow.baseSize = 5.4f;
             follow.sizePerMeter = 0.22f;
-            follow.minSize = 2.6f;
-            follow.maxSize = 5.2f;
-            follow.min = new Vector2(-9.5f, 0.9f);
-            follow.max = new Vector2(9.5f, 2.0f);
+            follow.minSize = 4.8f;
+            follow.maxSize = 9.0f;
+            follow.min = new Vector2(-12f, 1.2f);
+            follow.max = new Vector2(12f, 3.2f);
 
             // --- фон: небо, облака, холмы, вода ---
             var backdropGo = new GameObject("Backdrop");
             var backdrop = backdropGo.AddComponent<ArenaBackdrop>();
             backdrop.cam = cam;
             backdrop.waterLevel = -1.2f;
-            backdrop.levelBounds = new Vector2(-14f, 14f);
+            backdrop.levelBounds = new Vector2(-18f, 18f);
             backdrop.skyTop = Hex(Palette.SkyTop);
             backdrop.skyBottom = Hex(Palette.SkyBottom);
             backdrop.cloudColor = Hex(Palette.Cloud);
@@ -198,11 +198,14 @@ namespace StickmanFight.EditorTools
             backdrop.hillTop = Hex(Palette.HillTop);
 
             // --- геометрия уровня ---
-            CreatePlatform("Bridge", new Vector2(0f, 0f), new Vector2(14f, 0.5f), PlatformVisual.Kind.Plank);
-            CreatePlatform("PlatformLeft", new Vector2(-8.6f, 1.7f), new Vector2(3.4f, 0.55f), PlatformVisual.Kind.Brick);
-            CreatePlatform("PlatformRight", new Vector2(8.6f, 1.7f), new Vector2(3.4f, 0.55f), PlatformVisual.Kind.Brick);
-            CreatePlatform("PostLeft", new Vector2(-6.9f, -1.1f), new Vector2(0.34f, 3.0f), PlatformVisual.Kind.Post, solid: false);
-            CreatePlatform("PostRight", new Vector2(6.9f, -1.1f), new Vector2(0.34f, 3.0f), PlatformVisual.Kind.Post, solid: false);
+            CreatePlatform("Bridge", new Vector2(0f, 0f), new Vector2(22f, 0.5f), PlatformVisual.Kind.Plank);
+            CreatePlatform("PlatformLeft", new Vector2(-10.5f, 1.7f), new Vector2(4.0f, 0.55f), PlatformVisual.Kind.Brick);
+            CreatePlatform("FloatLeft", new Vector2(-4.6f, 2.7f), new Vector2(3.0f, 0.5f), PlatformVisual.Kind.Brick);
+            CreatePlatform("FloatRight", new Vector2(4.6f, 2.7f), new Vector2(3.0f, 0.5f), PlatformVisual.Kind.Brick);
+            CreatePlatform("FloatTop", new Vector2(0f, 4.4f), new Vector2(3.4f, 0.5f), PlatformVisual.Kind.Plank);
+            CreatePlatform("PlatformRight", new Vector2(10.5f, 1.7f), new Vector2(4.0f, 0.55f), PlatformVisual.Kind.Brick);
+            CreatePlatform("PostLeft", new Vector2(-9.8f, -1.1f), new Vector2(0.34f, 3.0f), PlatformVisual.Kind.Post, solid: false);
+            CreatePlatform("PostRight", new Vector2(9.8f, -1.1f), new Vector2(0.34f, 3.0f), PlatformVisual.Kind.Post, solid: false);
 
             // --- вода убивает ---
             var hazardGo = new GameObject("WaterHazard");
@@ -619,6 +622,33 @@ namespace StickmanFight.EditorTools
             if (knobSprite != null) { kimg.sprite = knobSprite; kimg.type = Image.Type.Simple; }
             kimg.color = new Color(1f, 1f, 1f, 0.55f);
             kimg.raycastTarget = false;
+
+            // 4 стрелки внутри круга — как D-pad в оригинале.
+            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var arrows = new (string label, Vector2 pos)[]
+            {
+                ("▲", new Vector2(0f, size.y * 0.29f)),
+                ("▼", new Vector2(0f, -size.y * 0.29f)),
+                ("◀", new Vector2(-size.x * 0.29f, 0f)),
+                ("▶", new Vector2(size.x * 0.29f, 0f)),
+            };
+            foreach (var a in arrows)
+            {
+                var ag = new GameObject("Arrow", typeof(RectTransform));
+                ag.transform.SetParent(go.transform, false);
+                var art = (RectTransform)ag.transform;
+                art.anchorMin = art.anchorMax = new Vector2(0.5f, 0.5f);
+                art.pivot = new Vector2(0.5f, 0.5f);
+                art.sizeDelta = new Vector2(70f, 70f);
+                art.anchoredPosition = a.pos;
+                var at = ag.AddComponent<Text>();
+                at.font = font;
+                at.fontSize = 42;
+                at.alignment = TextAnchor.MiddleCenter;
+                at.color = new Color(1f, 1f, 1f, 0.85f);
+                at.text = a.label;
+                at.raycastTarget = false;
+            }
 
             var joy = go.AddComponent<VirtualJoystick>();
             joy.knob = krt;
