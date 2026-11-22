@@ -1,3 +1,4 @@
+using StickmanFight.Art;
 using StickmanFight.Characters;
 using StickmanFight.Combat;
 using StickmanFight.Core;
@@ -191,6 +192,9 @@ namespace StickmanFight.Combat
 
             float speed = Mathf.Abs(character.Rig.Torso.linearVelocity.x);
             float speedFactor = Mathf.Clamp01(speed / Mathf.Max(0.1f, cfg.refSpeed));
+
+            // След взмаха перед персонажем.
+            SwingArc.Spawn(origin, face, cfg.range, Color.white);
 
             // Меч бьёт за счёт взмаха, а не ходьбы: базовый урон постоянный (AC: 14–21 с места).
             // Молот — наоборот, «разгоняемый»: от скорости зависит и урон, и нокбэк.
