@@ -185,8 +185,20 @@ namespace StickmanFight.Characters
 
             if (!upright)
             {
+                // Нокдаун/смерть: корпус «отпускаем», тело падает как настоящий рэгдолл.
+                if (body.constraints != RigidbodyConstraints2D.None)
+                    body.constraints = RigidbodyConstraints2D.None;
                 Rig.SetPoseHeld(false);
                 return;
+            }
+
+            // Пока персонаж на ногах — корпус жёстко вертикален. Это и есть ответ на «не падали после
+            // каждого действия»: конечности живут физикой и болтаются, а корпус не заваливается.
+            if (body.constraints != RigidbodyConstraints2D.FreezeRotation)
+            {
+                body.constraints = RigidbodyConstraints2D.FreezeRotation;
+                body.rotation = 0f;
+                body.angularVelocity = 0f;
             }
 
             Rig.SetPoseHeld(true);

@@ -156,6 +156,9 @@ namespace StickmanFight.Combat
                     ? Mathf.Lerp(0f, -70f, t * 2f)
                     : Mathf.Lerp(-70f, 55f, (t - 0.5f) * 2f);
                 character.Rig.SetJointTarget(RagdollRig.JointArmR, angle * face);
+                // Локоть распрямляется к моменту удара — взмах читается сильнее.
+                float straight = Mathf.Sin(t * Mathf.PI);
+                character.Rig.SetJointTarget(RagdollRig.JointElbowR, Mathf.Lerp(-42f, -4f, straight));
             }
 
             if (!_hitDone && _timer >= hitTime)
@@ -194,7 +197,7 @@ namespace StickmanFight.Combat
             float speedFactor = Mathf.Clamp01(speed / Mathf.Max(0.1f, cfg.refSpeed));
 
             // След взмаха перед персонажем.
-            SwingArc.Spawn(origin, face, cfg.range, Color.white);
+            SwingArc.Spawn(origin, face, Mathf.Min(0.62f, cfg.range), Color.white);
 
             // Меч бьёт за счёт взмаха, а не ходьбы: базовый урон постоянный (AC: 14–21 с места).
             // Молот — наоборот, «разгоняемый»: от скорости зависит и урон, и нокбэк.

@@ -191,7 +191,17 @@ namespace StickmanFight.Characters
 
         public void ResetJointTargets()
         {
-            foreach (var j in _joints) j.target = 0f;
+            // Боевая стойка, а не «смирно»: руки согнуты и вынесены вперёд, колени мягкие.
+            // Именно из-за нулевой позы персонажи выглядели деревянными болванчиками.
+            SetJointTarget(JointShoulderL, -22f);
+            SetJointTarget(JointShoulderR, -22f);
+            SetJointTarget(JointElbowL, -42f);
+            SetJointTarget(JointElbowR, -42f);
+            SetJointTarget(JointHipL, 0f);
+            SetJointTarget(JointHipR, 0f);
+            SetJointTarget(JointKneeL, 7f);
+            SetJointTarget(JointKneeR, 7f);
+            SetJointTarget(JointNeck, 0f);
         }
 
         public float GetFeetCenterX()
