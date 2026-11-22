@@ -24,6 +24,62 @@ namespace StickmanFight.EditorTools
         [MenuItem("Tools/Playground/4. Build AAB", priority = 4)]
         public static void BuildAab() => Build(true);
 
+        /// <summary>
+        /// Сборка под Windows для быстрой проверки без телефона (Mono, ~30 с вместо IL2CPP).
+        /// Запускать так:
+        ///   builds\win\StickmanFight.exe -screen-width 1280 -screen-height 720 -screen-fullscreen 0 ^
+        ///       -shot C:\path\shot.png -shotDelay 3 -logFile C:\path\player.log
+        /// </summary>
+        [MenuItem("Tools/Playground/6. Build Windows (PC test)", priority = 6)]
+        public static void BuildWindows()
+        {
+            int exitCode = 1;
+            try
+            {
+                ConfigureAndroidPaths();
+                ProjectSetup.ConfigureAll();
+                var scenes = SceneBuilder.BuildAll();
+
+                string gameRoot = Directory.GetParent(Application.dataPath)!.FullName;
+                string repoRoot = Directory.GetParent(gameRoot)?.FullName ?? gameRoot;
+                string outDir = Path.Combine(repoRoot, BuildsFolderName, "win");
+                Directory.CreateDirectory(outDir);
+                string outputPath = Path.Combine(outDir, "StickmanFight.exe");
+
+                PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
+
+                var options = new BuildPlayerOptions
+                {
+                    scenes = scenes,
+                    locationPathName = outputPath,
+                    target = BuildTarget.StandaloneWindows64,
+                    options = BuildOptions.None
+                };
+
+                Debug.Log($"[Build] старт Windows: {outputPath}");
+                BuildReport report = BuildPipeline.BuildPlayer(options);
+
+                if (report.summary.result == BuildResult.Succeeded)
+                {
+                    Debug.Log($"[Build] Windows OK {outputPath} | {report.summary.totalSize / (1024f * 1024f):0.0} MB | {report.summary.totalTime:mm\\:ss}");
+                    WriteResult("OK-WIN", outputPath, report.summary.totalSize);
+                    exitCode = 0;
+                }
+                else
+                {
+                    Debug.LogError($"[Build] Windows FAILED {report.summary.result}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[Build] Windows ИСКЛЮЧЕНИЕ: {e}");
+            }
+            finally
+            {
+                if (Application.isBatchMode) EditorApplication.Exit(exitCode);
+            }
+        }
+
         /// <summary>Прописывает пути к SDK/NDK/JDK, чтобы сборка не зависела от кликов в GUI.</summary>
         [MenuItem("Tools/Playground/0. Configure Android Paths", priority = 0)]
         public static void ConfigureAndroidPaths()

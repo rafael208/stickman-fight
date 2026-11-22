@@ -45,8 +45,10 @@ namespace StickmanFight.Art
 
         private void BuildSky()
         {
-            float height = cam.orthographicSize * 2f;
-            float width = height * cam.aspect + 2f;
+            // Трёхкратный запас: камера меняет orthographicSize при зуме на группу,
+            // иначе по краям проступает цвет очистки экрана.
+            float height = cam.orthographicSize * 2f * 3f;
+            float width = height * cam.aspect;
 
             var go = new GameObject("Sky");
             go.transform.SetParent(cam.transform, false);

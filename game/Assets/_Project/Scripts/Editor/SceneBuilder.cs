@@ -229,9 +229,17 @@ namespace StickmanFight.EditorTools
             var drop = MakeTapButton(uiRoot, "BtnDrop", "БРОС", new Vector2(130f, 120f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(90f, 44f), Hex("#6B3E3E"), 28);
             UnityEventTools.AddVoidPersistentListener(drop.onClick, touch.OnDrop);
 
+            // ПК-ввод рядом с тачем: один билд играбелен и на телефоне, и на компьютере.
+            var keyboard = touchGo.AddComponent<KeyboardInput>();
+            var composite = touchGo.AddComponent<CompositeInput>();
+            composite.sources = new MonoBehaviour[] { touch, keyboard };
+
             var router = player.gameObject.AddComponent<InputRouter>();
             router.target = player;
-            router.source = touch;
+            router.source = composite;
+
+            // Автоскриншот для ПК-проверок (без ключа -shot ничего не делает).
+            new GameObject("AutoScreenshot").AddComponent<AutoScreenshot>();
 
             // Автопрогон G2/G3
             var testGo = new GameObject("ArenaTest");

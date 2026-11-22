@@ -6,7 +6,7 @@ namespace StickmanFight
     public static class BuildInfo
     {
         public const string Version = "0.1.0";
-        public const int BuildNumber = 15;
+        public const int BuildNumber = 17;
         public const string ProductName = "Stickman Fight";
         public const string CompanyName = "StickmanFight";
         public const string ApplicationId = "com.stickmanfight.game";

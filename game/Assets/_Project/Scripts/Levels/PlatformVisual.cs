@@ -45,7 +45,9 @@ namespace StickmanFight.Levels
                     sr.sprite = SpriteFactory.BrickWall(w, h, Hex(Palette.Brick), Hex(Palette.BrickMortar), 2, 6);
                     break;
                 case Kind.Post:
+                    // Solid() — это спрайт ровно 1x1 единицу, поэтому его надо масштабировать.
                     sr.sprite = SpriteFactory.Solid(Hex(Palette.Plank));
+                    go.transform.localScale = new Vector3(size.x, size.y, 1f);
                     break;
                 default:
                     sr.sprite = SpriteFactory.Plank(
